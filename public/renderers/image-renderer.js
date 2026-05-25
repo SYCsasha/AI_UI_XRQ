@@ -29,15 +29,15 @@ class ImageRenderer {
       // Zoom out button
       const zoomOut = document.createElement('button');
       zoomOut.className = 'btn preview-btn';
-      zoomOut.textContent = '放大';
-      zoomOut.onclick = () => this.zoomIn();
+      zoomOut.textContent = '缩小';
+      zoomOut.onclick = () => this.zoomOut();
       controls.appendChild(zoomOut);
 
       // Zoom in button
       const zoomIn = document.createElement('button');
       zoomIn.className = 'btn preview-btn';
-      zoomIn.textContent = '缩小';
-      zoomIn.onclick = () => this.zoomOut();
+      zoomIn.textContent = '放大';
+      zoomIn.onclick = () => this.zoomIn();
       controls.appendChild(zoomIn);
 
       // Reset button

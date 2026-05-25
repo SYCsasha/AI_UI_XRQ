@@ -37,11 +37,7 @@ class CodeRenderer {
       // Apply syntax highlighting if available
       if (typeof hljs !== 'undefined') {
         try {
-          if (language && language !== 'plaintext') {
-            hljs.highlightElement(codeEl);
-          } else {
-            hljs.highlightElement(codeEl);
-          }
+          hljs.highlightElement(codeEl);
         } catch (error) {
           console.warn('Syntax highlighting failed:', error);
         }
