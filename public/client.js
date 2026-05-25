@@ -1,4 +1,5 @@
 const PAGE_SIZE = 50;
+const SCROLL_THRESHOLD_PX = 80;
 const LOCAL_HISTORY_KEY = 'ai_renderer_history_v1';
 const WS_URL = `ws://${location.host}`;
 
@@ -100,15 +101,7 @@ function renderCurrent() {
   document.getElementById('editor-filename').textContent = block.filename || 'untitled';
   document.getElementById('editor-time').textContent = new Date(block.timestamp).toLocaleString('zh-CN', { hour12: false });
 
-  let highlighted = escHtml(block.code || '');
-  const lang = (block.lang || '').toLowerCase();
-  if (window.hljs && lang && hljs.getLanguage(lang)) {
-    highlighted = hljs.highlight(block.code || '', { language: lang, ignoreIllegals: true }).value;
-  } else if (window.hljs) {
-    highlighted = hljs.highlightAuto(block.code || '').value;
-  }
-
-  renderCodeEl.innerHTML = highlighted;
+  renderCodeEl.innerHTML = escHtml(block.code || '');
   editorEl.value = block.code || '';
 }
 
@@ -156,7 +149,7 @@ function setupInfiniteScroll() {
   const pane = document.querySelector('.editor-pane');
   pane.addEventListener('scroll', () => {
     if (!hasMore || loadingPage) return;
-    const nearBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - 80;
+    const nearBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - SCROLL_THRESHOLD_PX;
     if (nearBottom) {
       fetchHistoryPage(loadedOffset, PAGE_SIZE, true);
     }
@@ -204,9 +197,38 @@ function setupButtons() {
   });
 
   document.getElementById('screenshot-btn').addEventListener('click', async () => {
-    const card = document.getElementById('render-card');
-    if (!window.html2canvas || !card) return;
-    const canvas = await html2canvas(card, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+    const block = selectedBlock();
+    if (!block) return;
+    const lines = (block.code || '').split('\n');
+    const padding = 24;
+    const lineHeight = 24;
+    const maxLineLength = Math.max(24, ...lines.map((line) => line.length));
+    const width = Math.min(1800, Math.max(840, maxLineLength * 9 + padding * 2));
+    const height = Math.max(260, (lines.length + 4) * lineHeight + padding * 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '16px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillText(`${block.filename || 'untitled'} · ${block.lang || 'plaintext'}`, padding, padding + 4);
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.beginPath();
+    ctx.moveTo(padding, padding + 16);
+    ctx.lineTo(width - padding, padding + 16);
+    ctx.stroke();
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = '18px ui-monospace, SFMono-Regular, Menlo, monospace';
+    lines.forEach((line, index) => {
+      const y = padding + 52 + index * lineHeight;
+      ctx.fillText(line || ' ', padding, y);
+    });
+
     const link = document.createElement('a');
     link.href = canvas.toDataURL('image/png');
     link.download = `code-screenshot-${Date.now()}.png`;

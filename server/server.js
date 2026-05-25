@@ -13,6 +13,7 @@ const HOST = '0.0.0.0';
 const MAX_HISTORY = Number(process.env.MAX_HISTORY || 200);
 const INITIAL_PAGE_SIZE = Number(process.env.INITIAL_PAGE_SIZE || 50);
 const CHUNK_MAX_BYTES = 1024 * 1024;
+const CHUNK_RECORD_TTL_MS = 5 * 60 * 1000;
 const WS_HEARTBEAT_MS = Number(process.env.WS_HEARTBEAT_MS || 30000);
 const STORAGE_DIR = path.join(os.homedir(), '.ai-renderer');
 const HISTORY_FILE = path.join(STORAGE_DIR, 'history.json');
@@ -435,7 +436,7 @@ setInterval(() => {
 setInterval(() => {
   const now = Date.now();
   chunkStore.forEach((record, key) => {
-    if (now - record.createdAt > 5 * 60 * 1000) {
+    if (now - record.createdAt > CHUNK_RECORD_TTL_MS) {
       chunkStore.delete(key);
     }
   });
