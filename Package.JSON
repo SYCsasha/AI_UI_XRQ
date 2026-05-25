@@ -1,0 +1,22 @@
+{
+  "name": "ai-code-renderer",
+  "version": "1.0.0",
+  "description": "CLI → WebSocket → Web UI code renderer for AI workflows",
+  "main": "server/server.js",
+  "bin": {
+    "ai-renderer": "./server/server.js",
+    "ai-push": "./cli/ai-push.js"
+  },
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "keywords": ["ai", "code", "renderer", "cli", "websocket"],
+  "license": "MIT"
+}
