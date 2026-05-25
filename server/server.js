@@ -165,7 +165,10 @@ function makeEntry(payload) {
     filename: getSafeFilename(payload.filename),
     label: payload.label || '',
     session: payload.session || 'default',
-    meta: payload.meta || {},
+    meta: {
+      ...(payload.meta || {}),
+      contentType: payload.contentType || payload.meta?.contentType,
+    },
   };
 }
 
@@ -271,6 +274,7 @@ function handleChunkPush(payload) {
       filename: payload.filename,
       label: payload.label,
       session: payload.session,
+      contentType: payload.contentType,
       meta: payload.meta || {},
     };
     chunkStore.set(key, record);
@@ -295,6 +299,7 @@ function handleChunkPush(payload) {
     filename: record.filename,
     label: record.label,
     session: record.session,
+    contentType: record.contentType,
     meta: { ...record.meta, chunked: true, chunks: total },
   });
 

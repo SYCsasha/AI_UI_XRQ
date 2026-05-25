@@ -87,6 +87,49 @@ function detectLang(filename) {
   return extMap[ext] || 'plaintext';
 }
 
+function detectContentType(filename, lang, content) {
+  const filenameExt = path.extname(filename).toLowerCase();
+  const contentTypeLangMap = {
+    'markdown': 'markdown', 'md': 'markdown', 'mdown': 'markdown',
+    'json': 'json',
+    'html': 'html', 'xml': 'html', 'svg': 'html',
+    'image': 'image', 'img': 'image',
+    'pdf': 'pdf',
+  };
+
+  // Check by lang parameter
+  if (lang && contentTypeLangMap[lang.toLowerCase()]) {
+    return contentTypeLangMap[lang.toLowerCase()];
+  }
+
+  // Check by filename extension
+  const extWithoutDot = filenameExt.slice(1).toLowerCase();
+  if (contentTypeLangMap[extWithoutDot]) {
+    return contentTypeLangMap[extWithoutDot];
+  }
+
+  // Check for image extensions
+  if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(filename)) {
+    return 'image';
+  }
+
+  // Check by content
+  const trimmedContent = (content || '').trim();
+  if (trimmedContent.startsWith('<') || trimmedContent.includes('<!DOCTYPE')) {
+    return 'html';
+  }
+  if (trimmedContent.startsWith('{') || trimmedContent.startsWith('[')) {
+    try {
+      JSON.parse(trimmedContent);
+      return 'json';
+    } catch {
+      // Not JSON
+    }
+  }
+
+  return 'code';
+}
+
 function requestJson({ host, port, pathName, method = 'GET', payload }) {
   return new Promise((resolve, reject) => {
     const body = payload ? JSON.stringify(payload) : null;
@@ -187,6 +230,7 @@ async function pushChunked(payload, host, port) {
         filename: payload.filename,
         label: payload.label,
         session: payload.session,
+        contentType: payload.contentType,
         meta: payload.meta,
       },
     });
@@ -223,7 +267,7 @@ async function withPushFallback(payload, host, port, context = {}) {
 }
 
 if (hasFlag('--help') || hasFlag('-h')) {
-  console.log(`\n\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer\n\n\x1b[33mUsage:\x1b[0m\n  ai-push [file]                     Push a file\n  echo "code" | ai-push              Push stdin\n  ai-push --lang py --stream         Stream stdin line-by-line\n\n\x1b[33mOptions:\x1b[0m\n  --lang,     -l  <lang>     Language (python, js, bash, json, ...)\n  --label,    -L  <text>     Label/description for this block\n  --filename, -f  <name>     Override filename shown in UI\n  --session,  -s  <name>     Session name (default: 'default')\n  --host,     -H  <host>     Server host (default: 127.0.0.1)\n  --port,     -p  <port>     Server port (default: 7788)\n  --stream                   Stream mode: send each line as it arrives\n  --clear                    Clear all code history in renderer\n  --status                   Show server stats\n  --config                   Save config (use with --host/--port/--session)\n    --help                     Show this help\n\n\x1b[33mEnv:\x1b[0m\n  AI_RENDERER_TIMEOUT_MS     HTTP request timeout in milliseconds (default: 10000)\n`);
+  console.log(`\n\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer\n\n\x1b[33mUsage:\x1b[0m\n  ai-push [file]                     Push a file\n  echo "code" | ai-push              Push stdin\n  ai-push --lang py --stream         Stream stdin line-by-line\n\n\x1b[33mOptions:\x1b[0m\n  --lang,     -l  <lang>     Language (python, js, bash, json, ...)\n  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf)\n  --label,    -L  <text>     Label/description for this block\n  --filename, -f  <name>     Override filename shown in UI\n  --session,  -s  <name>     Session name (default: 'default')\n  --host,     -H  <host>     Server host (default: 127.0.0.1)\n  --port,     -p  <port>     Server port (default: 7788)\n  --stream                   Stream mode: send each line as it arrives\n  --clear                    Clear all code history in renderer\n  --status                   Show server stats\n  --config                   Save config (use with --host/--port/--session)\n    --help                     Show this help\n\n\x1b[33mEnv:\x1b[0m\n  AI_RENDERER_TIMEOUT_MS     HTTP request timeout in milliseconds (default: 10000)\n`);
   process.exit(0);
 }
 
@@ -232,6 +276,7 @@ const HOST = getArg('--host') || getArg('-H') || cfg.host;
 const PORT = Number(getArg('--port') || getArg('-p') || cfg.port);
 const SESSION = getArg('--session') || getArg('-s') || cfg.session;
 const LANG = getArg('--lang') || getArg('-l');
+const TYPE = getArg('--type') || getArg('-t');
 const LABEL = getArg('--label') || getArg('-L') || '';
 const FILENAME_OPT = getArg('--filename') || getArg('-f');
 const STREAM = hasFlag('--stream');
@@ -309,12 +354,16 @@ async function main() {
     let lineNum = 0;
     for await (const line of rl) {
       lineNum += 1;
+      const filename = FILENAME_OPT || `stream-line-${lineNum}`;
+      const lang = LANG || 'plaintext';
+      const contentType = TYPE || detectContentType(filename, lang, line);
       const ok = await sendOne({
-        lang: LANG || 'plaintext',
+        lang,
         code: line,
-        filename: FILENAME_OPT || `stream-line-${lineNum}`,
+        filename,
         label: LABEL || `Line ${lineNum}`,
         session: SESSION,
+        contentType,
         meta: { stream: true, lineNum },
       }, 'stream');
       process.stdout.write(ok ? '\x1b[32m·\x1b[0m' : '\x1b[31m✗\x1b[0m');
@@ -327,12 +376,14 @@ async function main() {
     const code = fs.readFileSync(fileArg, 'utf8');
     const filename = FILENAME_OPT || path.basename(fileArg);
     const lang = LANG || detectLang(fileArg);
+    const contentType = TYPE || detectContentType(filename, lang, code);
     const ok = await sendOne({
       lang,
       code,
       filename,
       label: LABEL,
       session: SESSION,
+      contentType,
       meta: { source: 'file' },
     }, 'file');
     if (ok) console.log(`\x1b[32m✓\x1b[0m Pushed \x1b[1m${filename}\x1b[0m (${lang}, ${code.length} chars)`);
@@ -350,12 +401,14 @@ async function main() {
       }
       const filename = FILENAME_OPT || 'stdin';
       const lang = LANG || 'plaintext';
+      const contentType = TYPE || detectContentType(filename, lang, code);
       const ok = await sendOne({
         lang,
         code,
         filename,
         label: LABEL,
         session: SESSION,
+        contentType,
         meta: { source: 'stdin' },
       }, 'stdin');
       if (ok) console.log(`\x1b[32m✓\x1b[0m Pushed stdin (${lang}, ${code.length} chars)`);

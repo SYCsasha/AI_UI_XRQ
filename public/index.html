@@ -28,8 +28,11 @@
           <div class="render-meta">
             <span id="render-filename">等待代码</span>
             <span id="render-lang">plaintext</span>
+            <span id="render-type" class="render-type">代码</span>
           </div>
-          <pre><code id="render-code" class="hljs">等待来自 CLI 的代码推送...</code></pre>
+          <div id="render-content" class="render-content">
+            <pre><code id="render-code" class="hljs">等待来自 CLI 的代码推送...</code></pre>
+          </div>
         </article>
       </section>
 
@@ -53,6 +56,21 @@
     </main>
   </div>
 
+  <!-- Renderer libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js/build/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  
+  <!-- Renderer modules -->
+  <script src="/renderers/code-renderer.js"></script>
+  <script src="/renderers/markdown-renderer.js"></script>
+  <script src="/renderers/json-tree-renderer.js"></script>
+  <script src="/renderers/html-preview-renderer.js"></script>
+  <script src="/renderers/image-renderer.js"></script>
+  <script src="/renderers/pdf-renderer.js"></script>
+  <script src="/renderers/dispatcher.js"></script>
+  
+  <!-- Main client -->
   <script src="/client.js"></script>
 </body>
 </html>
