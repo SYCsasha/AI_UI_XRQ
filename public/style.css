@@ -276,7 +276,6 @@ body {
 .tree-preview {
   color: var(--muted);
 }
-.tree-children { }
 
 /* HTML Preview Renderer */
 .html-preview-wrapper {
