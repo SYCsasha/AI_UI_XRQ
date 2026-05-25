@@ -93,6 +93,7 @@ function renderCurrent() {
     renderCodeEl.textContent = '等待来自 CLI 的代码推送...';
     document.getElementById('editor-filename').textContent = '-';
     document.getElementById('editor-time').textContent = '-';
+    document.getElementById('render-type').textContent = '代码';
     editorEl.value = '';
     return;
   }
@@ -102,7 +103,13 @@ function renderCurrent() {
   document.getElementById('editor-filename').textContent = block.filename || 'untitled';
   document.getElementById('editor-time').textContent = new Date(block.timestamp).toLocaleString('zh-CN', { hour12: false });
 
-  renderCodeEl.innerHTML = escHtml(block.code || '');
+  // Use renderer dispatcher for content rendering
+  const renderContent = document.getElementById('render-content');
+  const contentType = rendererDispatcher.detectContentType(block);
+  document.getElementById('render-type').textContent = rendererDispatcher.getTypeName(contentType);
+  
+  rendererDispatcher.render(block, renderContent);
+  
   editorEl.value = block.code || '';
 }
 
