@@ -1,0 +1,105 @@
+{
+  "projectName": "AI Enhanced UI Renderer",
+  "version": "2.0.0",
+  "features": {
+    "contentRendering": [
+      "Markdown with syntax highlighting",
+      "JSON/AST tree visualization",
+      "HTML/CSS/JS live preview",
+      "Image viewer with zoom",
+      "PDF document display",
+      "Source code highlighting"
+    ],
+    "capabilities": {
+      "server": {
+        "port": 7788,
+        "protocol": "WebSocket + HTTP",
+        "maxHistory": 200,
+        "chunkSize": "1MB"
+      },
+      "client": {
+        "realtime": true,
+        "autoReconnect": true,
+        "localStorage": "supported",
+        "responsive": "mobile-friendly"
+      }
+    }
+  },
+  "contentTypes": {
+    "code": {
+      "description": "Source code with syntax highlighting",
+      "languages": ["python", "javascript", "typescript", "go", "rust", "java", "c++", "sql"],
+      "detection": "by extension or --lang flag"
+    },
+    "markdown": {
+      "description": "Markdown document rendering",
+      "features": ["headers", "bold/italic", "code blocks", "lists", "tables", "blockquotes"],
+      "syntaxHighlight": true
+    },
+    "json": {
+      "description": "JSON/AST tree visualization",
+      "features": ["collapsible nodes", "type indicators", "nested support"],
+      "maxDepth": "unlimited"
+    },
+    "html": {
+      "description": "Live HTML/CSS/JS preview",
+      "features": ["sandboxed", "CSS support", "JavaScript execution", "download"],
+      "security": "sandbox + CSP"
+    },
+    "image": {
+      "description": "Image viewer",
+      "formats": ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"],
+      "features": ["zoom", "download", "responsive"]
+    },
+    "pdf": {
+      "description": "PDF document viewer",
+      "features": ["page navigation", "zoom", "search"],
+      "library": "pdf.js"
+    }
+  },
+  "cli": {
+    "commands": [
+      {
+        "name": "ai-push",
+        "description": "Push code/content to renderer"
+      },
+      {
+        "name": "ai-push --status",
+        "description": "Show server statistics"
+      },
+      {
+        "name": "ai-push --clear",
+        "description": "Clear all history"
+      }
+    ],
+    "flags": [
+      "--type/-t: content type (code, markdown, json, html, image, pdf)",
+      "--lang/-l: programming language for syntax highlighting",
+      "--filename/-f: override filename",
+      "--label/-L: description label",
+      "--session/-s: session name",
+      "--stream: stream mode (line-by-line)",
+      "--host/-H: server host",
+      "--port/-p: server port"
+    ]
+  },
+  "dependencies": {
+    "runtime": ["ws"],
+    "frontend": [
+      "marked (Markdown parsing)",
+      "highlight.js (syntax highlighting)",
+      "pdf.js (PDF rendering)"
+    ]
+  },
+  "performance": {
+    "latency": "< 50ms (local)",
+    "maxFileSize": "4MB (single request)",
+    "chunkUpload": "supports large files"
+  },
+  "browser_support": [
+    "Chrome 90+",
+    "Firefox 88+",
+    "Safari 14+",
+    "Edge 90+"
+  ]
+}

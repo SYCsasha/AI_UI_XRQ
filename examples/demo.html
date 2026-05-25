@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Preview Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 90%;
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .card {
+      background: #f5f5f5;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .card h3 {
+      color: #667eea;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    
+    .card p {
+      color: #666;
+      line-height: 1.6;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: transform 0.2s;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .output {
+      background: #e8f5e9;
+      border: 1px solid #4caf50;
+      border-radius: 5px;
+      padding: 15px;
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .output.show {
+      display: block;
+    }
+    
+    .output p {
+      color: #2e7d32;
+      margin: 5px 0;
+    }
+    
+    .feature-list {
+      list-style: none;
+      margin: 10px 0;
+    }
+    
+    .feature-list li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+      color: #555;
+    }
+    
+    .feature-list li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #4caf50;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Enhanced UI Renderer Demo</h1>
+    
+    <div class="card">
+      <h3>Features</h3>
+      <ul class="feature-list">
+        <li>Markdown rendering with syntax highlighting</li>
+        <li>JSON/AST tree visualization</li>
+        <li>HTML/CSS/JS live preview</li>
+        <li>Image viewer with zoom controls</li>
+        <li>PDF document viewer</li>
+      </ul>
+    </div>
+    
+    <button onclick="showMarkdown()">📝 Markdown Rendering</button>
+    <button onclick="showJSON()">📊 JSON Visualization</button>
+    <button onclick="showDateTime()">🕐 Current Date & Time</button>
+    <button onclick="showStats()">📈 Statistics</button>
+    <button onclick="clearOutput()">🗑️ Clear Output</button>
+    
+    <div id="output" class="output">
+      <p id="output-text"></p>
+    </div>
+  </div>
+
+  <script>
+    function showOutput(content) {
+      const output = document.getElementById('output');
+      const text = document.getElementById('output-text');
+      text.innerHTML = content;
+      output.classList.add('show');
+    }
+    
+    function clearOutput() {
+      document.getElementById('output').classList.remove('show');
+    }
+    
+    function showMarkdown() {
+      showOutput(`
+        <strong>Markdown Support:</strong><br>
+        ✓ Headers (h1-h6)<br>
+        ✓ Bold, italic, code formatting<br>
+        ✓ Lists and code blocks<br>
+        ✓ Links and images<br>
+        ✓ Tables and blockquotes
+      `);
+    }
+    
+    function showJSON() {
+      showOutput(`
+        <strong>JSON Tree Viewer:</strong><br>
+        Expandable/collapsible tree view for:<br>
+        ✓ JSON structures<br>
+        ✓ AST (Abstract Syntax Trees)<br>
+        ✓ Deep nesting support<br>
+        ✓ Type indicators for each value
+      `);
+    }
+    
+    function showDateTime() {
+      const now = new Date();
+      showOutput(`
+        <strong>Current Information:</strong><br>
+        Date: ${now.toLocaleDateString()}<br>
+        Time: ${now.toLocaleTimeString()}<br>
+        Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+      `);
+    }
+    
+    function showStats() {
+      const stats = {
+        'Screen Resolution': `${window.innerWidth}x${window.innerHeight}`,
+        'User Agent': navigator.userAgent.split(' ').pop(),
+        'Language': navigator.language,
+        'Platform': navigator.platform,
+        'Cookies Enabled': navigator.cookieEnabled,
+        'Online Status': navigator.onLine ? 'Online' : 'Offline'
+      };
+      
+      let output = '<strong>System Statistics:</strong><br>';
+      for (const [key, value] of Object.entries(stats)) {
+        output += `${key}: ${value}<br>`;
+      }
+      showOutput(output);
+    }
+    
+    // Log page load
+    console.log('Enhanced UI Renderer Demo loaded successfully');
+    console.log('All features are working correctly');
+  </script>
+</body>
+</html>
