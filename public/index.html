@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Code Renderer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="app" class="mode-render">
+    <header class="toolbar">
+      <div class="title">AI Code Renderer</div>
+      <div class="status"><span id="status-dot"></span><span id="status-text">connecting</span></div>
+      <div class="actions actions-render" id="render-actions">
+        <button id="edit-btn" class="btn">编辑</button>
+        <button id="download-btn" class="btn">下载</button>
+        <button id="screenshot-btn" class="btn">截图</button>
+      </div>
+      <div class="actions actions-code" id="code-actions">
+        <button id="render-btn" class="btn btn-primary">渲染</button>
+        <button id="reset-btn" class="btn btn-danger">重置</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section id="render-view" class="view render-view">
+        <article id="render-card" class="render-card">
+          <div class="render-meta">
+            <span id="render-filename">等待代码</span>
+            <span id="render-lang">plaintext</span>
+          </div>
+          <pre><code id="render-code" class="hljs">等待来自 CLI 的代码推送...</code></pre>
+        </article>
+      </section>
+
+      <section id="code-view" class="view code-view">
+        <div class="mobile-tabs">
+          <button id="toggle-sidebar" class="btn">代码列表</button>
+          <button id="swipe-tip" class="btn btn-ghost" disabled>右滑返回渲染页</button>
+        </div>
+        <aside id="sidebar" class="sidebar">
+          <div class="sidebar-header">Code Blocks</div>
+          <div id="sidebar-list"></div>
+        </aside>
+        <section class="editor-pane">
+          <div class="editor-meta">
+            <span id="editor-filename">-</span>
+            <span id="editor-time">-</span>
+          </div>
+          <textarea id="editor" spellcheck="false" aria-label="代码编辑区"></textarea>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="/client.js"></script>
+</body>
+</html>
