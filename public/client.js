@@ -1,5 +1,6 @@
 const PAGE_SIZE = 50;
 const SCROLL_THRESHOLD_PX = 80;
+const FALLBACK_POLL_PAGE_SIZE = 10;
 const LOCAL_HISTORY_KEY = 'ai_renderer_history_v1';
 const WS_URL = `ws://${location.host}`;
 
@@ -146,7 +147,7 @@ async function fetchHistoryPage(offset, limit = PAGE_SIZE, append = true) {
 }
 
 function setupInfiniteScroll() {
-  const pane = document.querySelector('.editor-pane');
+  const pane = document.querySelector('.sidebar');
   if (!pane) return;
   pane.addEventListener('scroll', () => {
     if (!hasMore || loadingPage) return;
@@ -254,7 +255,7 @@ function setupEditorSync() {
 function startFallbackPolling() {
   stopFallbackPolling();
   fallbackPollTimer = setInterval(() => {
-    fetchHistoryPage(0, PAGE_SIZE, false);
+    fetchHistoryPage(0, FALLBACK_POLL_PAGE_SIZE, false);
   }, 4000);
 }
 
