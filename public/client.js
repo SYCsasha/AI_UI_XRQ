@@ -147,6 +147,7 @@ async function fetchHistoryPage(offset, limit = PAGE_SIZE, append = true) {
 
 function setupInfiniteScroll() {
   const pane = document.querySelector('.editor-pane');
+  if (!pane) return;
   pane.addEventListener('scroll', () => {
     if (!hasMore || loadingPage) return;
     const nearBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - SCROLL_THRESHOLD_PX;

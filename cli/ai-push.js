@@ -223,13 +223,13 @@ async function withPushFallback(payload, host, port, context = {}) {
 }
 
 if (hasFlag('--help') || (hasFlag('-h') && args.length === 1)) {
-  console.log(`\n\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer\n\n\x1b[33mUsage:\x1b[0m\n  ai-push [file]                     Push a file\n  echo "code" | ai-push              Push stdin\n  ai-push --lang py --stream         Stream stdin line-by-line\n\n\x1b[33mOptions:\x1b[0m\n  --lang,     -l  <lang>     Language (python, js, bash, json, ...)\n  --label,    -L  <text>     Label/description for this block\n  --filename, -f  <name>     Override filename shown in UI\n  --session,  -s  <name>     Session name (default: 'default')\n    --host,     -H  <host>     Server host (default: 127.0.0.1)\n  --port          <port>     Server port (default: 7788)\n  --stream                   Stream mode: send each line as it arrives\n  --clear                    Clear all code history in renderer\n  --status                   Show server stats\n  --config                   Save config (use with --host/--port/--session)\n  --help                     Show this help\n`);
+  console.log(`\n\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer\n\n\x1b[33mUsage:\x1b[0m\n  ai-push [file]                     Push a file\n  echo "code" | ai-push              Push stdin\n  ai-push --lang py --stream         Stream stdin line-by-line\n\n\x1b[33mOptions:\x1b[0m\n  --lang,     -l  <lang>     Language (python, js, bash, json, ...)\n  --label,    -L  <text>     Label/description for this block\n  --filename, -f  <name>     Override filename shown in UI\n  --session,  -s  <name>     Session name (default: 'default')\n  --host,     -H  <host>     Server host (default: 127.0.0.1)\n  --port,     -p  <port>     Server port (default: 7788)\n  --stream                   Stream mode: send each line as it arrives\n  --clear                    Clear all code history in renderer\n  --status                   Show server stats\n  --config                   Save config (use with --host/--port/--session)\n  --help                     Show this help\n`);
   process.exit(0);
 }
 
 const cfg = loadConfig();
 const HOST = getArg('--host') || getArg('-H') || cfg.host;
-const PORT = Number(getArg('--port') || cfg.port);
+const PORT = Number(getArg('--port') || getArg('-p') || cfg.port);
 const SESSION = getArg('--session') || getArg('-s') || cfg.session;
 const LANG = getArg('--lang') || getArg('-l');
 const LABEL = getArg('--label') || getArg('-L') || '';

@@ -6,6 +6,7 @@
   --line: #e2e8f0;
   --primary: #2563eb;
   --danger: #dc2626;
+  --mobile-tabs-height: 46px;
 }
 
 * { box-sizing: border-box; }
@@ -163,7 +164,7 @@ body {
   }
   .sidebar {
     position: absolute;
-    inset: 46px auto 0 0;
+    inset: var(--mobile-tabs-height) auto 0 0;
     width: 75%;
     max-width: 300px;
     transform: translateX(-102%);
