@@ -1,137 +1,224 @@
-# AI_UI_XRQ
+# LLM Result Showcase
 
-**Enhanced AI Code Renderer with Rich Content Support**
+**A modern web-based renderer for displaying AI/LLM results, code, and rich content in real-time.**
 
-## Features
+## Overview
+
+LLM Result Showcase is a lightweight, WebSocket-based system that enables LLM applications to stream and visualize various types of content in a beautiful, responsive web interface. Perfect for showcasing model outputs, debugging AI workflows, and exploring generated code or data.
+
+## ✨ Key Features
 
 ### Core Capabilities
-- 🔄 WebSocket-based real-time code pushing and rendering
-- 📝 Code storage and history management
-- 🎨 Syntax highlighting for 100+ languages
-- 📱 Responsive mobile-friendly UI
-- 🔄 Automatic reconnection and offline queue
+- **Real-time Rendering** - WebSocket-based live content streaming
+- **Multi-format Support** - Code, Markdown, JSON, HTML, images, PDF, video, audio, SVG, and 3D models
+- **Responsive Design** - Mobile-friendly interface with touch support
+- **Auto-detection** - Intelligently identifies content type by extension or inspection
+- **Dark Editor** - Default dark mode for the code editor with syntax highlighting
+- **Full-screen Preview** - Immersive viewing mode for rendered content
+- **Refresh Controls** - Easy content refresh without reloading
 
-### Rich Content Rendering (✨ NEW)
-- **Markdown** - Full Markdown rendering with embedded code highlighting
-- **JSON/AST** - Collapsible tree view for JSON structures and ASTs
-- **HTML/CSS/JS** - Sandboxed preview with real-time rendering
-- **Images** - Zoom controls and responsive display (PNG, JPG, GIF, WebP, SVG)
-- **PDF** - PDF viewer with page navigation
-- **Code** - Traditional code highlighting for any language
+### Supported Content Types
+- **Code** - 100+ programming languages with syntax highlighting
+- **Markdown** - Full markdown rendering with embedded code highlighting
+- **JSON/AST** - Collapsible tree view for structured data
+- **HTML/CSS/JS** - Sandboxed live preview rendering
+- **Images** - Responsive display with zoom controls (PNG, JPG, GIF, WebP, SVG)
+- **PDF** - Multi-page PDF viewer with navigation
+- **Video** - MP4, WebM, MOV, AVI support
+- **Audio** - MP3, WAV, OGG, AAC, FLAC, M4A support
+- **SVG** - Vector graphics rendering
+- **3D Models** - Interactive 3D visualization with enhanced rendering
 
-### Auto-Detection
-Automatically detects content type by:
-- File extension
-- Language hint
-- Content inspection (HTML, JSON detection)
-- Explicit type specification
+## 🚀 Quick Start
 
-## Quick Start
-
-### Server
+### Installation
 
 ```bash
+# Install dependencies
 npm install
+
+# Start the server
 npm start
-# Web UI available at http://localhost:7788
+
+# Server runs on http://localhost:7788
 ```
 
-### Push Code/Content
+### Command Line Usage
 
 ```bash
-# Push a file
-ai-push script.py
+# Push a file from file path
+ai-push /path/to/file.py
 
-# Push code via stdin
-echo "print('hello')" | ai-push --lang python
-
-# Push Markdown
+# Push markdown file
 ai-push --type markdown README.md
 
-# Push JSON/AST
-echo '{"name": "John"}' | ai-push --type json
-
-# Push HTML for preview
-ai-push --type html index.html
+# Push JSON data
+ai-push data.json
 
 # Push image
 ai-push screenshot.png
-```
-
-## Configuration
-
-```bash
-# Configure server connection
-ai-push --config --host 192.168.1.100 --port 8000
-
-# View server stats
-ai-push --status
 
 # Clear all history
 ai-push --clear
+
+# View server status
+ai-push --status
 ```
 
-## Documentation
+## 📖 Usage Guide
 
-- [Full Feature Documentation](./RENDERER_FEATURES.md) - Detailed guide for all content types
-- [CLI Usage](./cli/ai-push.js) - Comprehensive CLI reference
+### Web Interface
 
-## Architecture
+1. **Render View** - Main content display area
+   - Edit button - Switch to editor mode (opens with dark theme)
+   - Refresh button - Refresh current content
+   - Fullscreen button - Enter fullscreen view
+
+2. **Code Editor** - Dark mode editing interface
+   - Real-time rendering preview
+   - Syntax highlighting for code
+   - Sidebar with content history
+   - Touch-friendly on mobile devices
+
+### API Reference
+
+#### POST /api/push
+Push a single code block or content
+
+```json
+{
+  "code": "print('hello world')",
+  "lang": "python",
+  "filename": "script.py",
+  "contentType": "code",
+  "label": "Example script",
+  "session": "default"
+}
+```
+
+#### POST /api/push-chunk
+Push large files in chunks (automatic for files > 1MB)
+
+#### GET /api/history?offset=0&limit=50
+Fetch code history with pagination
+
+#### GET /api/stats
+Get server statistics
+
+#### POST /api/clear
+Clear all history
+
+#### POST /api/delete-last
+Delete the last transmitted result
+
+## ⚙️ Configuration
+
+### CLI Configuration
+
+```bash
+# Save default connection settings
+ai-push --config --host 192.168.1.100 --port 8000 --session my-session
+```
+
+### Environment Variables
+
+- `PORT` - Server listening port (default: 7788)
+- `MAX_HISTORY` - Maximum history items to store (default: 200)
+- `AI_RENDERER_TIMEOUT_MS` - CLI request timeout in milliseconds (default: 10000)
+
+### File Structure
 
 ```
-AI_UI_XRQ/
+LLM-Result-Showcase/
 ├── server/
-│   └── server.js           # WebSocket server, history, API
+│   └── server.js           # WebSocket server and API
 ├── cli/
-│   └── ai-push.js          # CLI tool for pushing content
+│   └── ai-push.js          # Command-line interface
 └── public/
     ├── index.html          # Web UI
     ├── client.js           # Client-side logic
-    ├── style.css           # Styling
-    └── renderers/          # Content-type specific renderers
+    ├── style.css           # Styling (dark mode for editor)
+    └── renderers/          # Content renderers
         ├── code-renderer.js
         ├── markdown-renderer.js
         ├── json-tree-renderer.js
         ├── html-preview-renderer.js
         ├── image-renderer.js
         ├── pdf-renderer.js
-        └── dispatcher.js    # Content type routing
+        ├── video-renderer.js
+        ├── audio-renderer.js
+        ├── svg-renderer.js
+        ├── model-3d-renderer.js
+        ├── dispatcher.js
+        └── utils.js
 ```
 
-## API
+## 🎯 Use Cases
 
-### POST /api/push
-Push a single code block
+- **AI/LLM Output Showcase** - Display generated code, text, or content from language models
+- **Code Review** - Browse and review multiple code snippets in history
+- **Data Visualization** - Interactive JSON tree viewer for complex data structures
+- **Media Previews** - Preview generated images, PDFs, or videos
+- **Documentation** - Render markdown documentation in real-time
+- **3D Model Viewer** - Interactive 3D model exploration
 
-```json
-{
-  "code": "print('hello')",
-  "lang": "python",
-  "filename": "script.py",
-  "contentType": "code",
-  "label": "Example",
-  "session": "default"
+## 🔧 Development
+
+### Adding a New Content Type
+
+1. Create a new renderer file in `public/renderers/`:
+```javascript
+class MyCustomRenderer {
+  render(code, container) {
+    // Your rendering logic
+  }
 }
 ```
 
-### POST /api/push-chunk
-Push large files in chunks
+2. Register in `dispatcher.js`
 
-### GET /api/history?offset=0&limit=50
-Fetch code history with pagination
+3. Update CLI detection in `cli/ai-push.js`
 
-### GET /api/stats
-Server statistics
+## 📝 CLI Options
 
-### POST /api/clear
-Clear all history
+```
+ai-push — Send code to LLM Result Showcase
 
-## Environment Variables
+Usage:
+  ai-push [file]                     Push a file by path
+  ai-push --type markdown README.md  Push markdown file
+  ai-push --clear                    Clear all history
 
-- `PORT` - Server port (default: 7788)
-- `MAX_HISTORY` - Maximum history items (default: 200)
-- `AI_RENDERER_TIMEOUT_MS` - CLI timeout (default: 10000)
+Options:
+  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)
+  --label,    -L  <text>     Label/description for this block
+  --session,  -s  <name>     Session name (default: 'default')
+  --host,     -H  <host>     Server host (default: 127.0.0.1)
+  --port,     -p  <port>     Server port (default: 7788)
+  --clear                    Clear all code history in renderer
+  --delete-last              Delete the last transmitted result
+  --status                   Show server stats
+  --config                   Save config (use with --host/--port/--session)
+  --help                     Show this help
+```
 
-## License
+## 🌐 Browser Support
+
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers (iOS Safari, Chrome Android)
+
+## 📄 License
 
 MIT
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or issues.
+
+---
+
+**Version**: 0.11.0
+
+Made for showcasing AI/LLM results with style and clarity.
