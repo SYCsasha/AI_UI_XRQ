@@ -50,13 +50,13 @@ npm start
 ai-push /path/to/file.py
 
 # Push markdown file
-ai-push --type markdown README.md
+ai-push --type markdown /path/to/README.md
 
 # Push JSON data
-ai-push data.json
+ai-push /path/to/data.json
 
 # Push image
-ai-push screenshot.png
+ai-push /path/to/screenshot.png
 
 # Clear all history
 ai-push --clear
@@ -185,9 +185,9 @@ class MyCustomRenderer {
 ai-push — Send code to LLM Result Showcase
 
 Usage:
-  ai-push [file]                     Push a file by path
-  ai-push --type markdown README.md  Push markdown file
-  ai-push --clear                    Clear all history
+  ai-push /path/to/file                Push a file by path
+  ai-push --type markdown /path/to/file.md  Push markdown file
+  ai-push --clear                      Clear all history
 
 Options:
   --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)

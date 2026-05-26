@@ -16,6 +16,9 @@ class Model3DRenderer {
   static TOUCH_GESTURE_THRESHOLD = 10;
   static VERTICAL_ANIMATION_SPEED = 0.0005;
   static VERTICAL_ANIMATION_AMPLITUDE = 0.3;
+  static BACKGROUND_COLOR = 0x0a0e27;
+  static MIN_ZOOM = 0.5;
+  static MAX_ZOOM = 20;
 
   constructor() {
     this.scene = null;
@@ -47,7 +50,7 @@ class Model3DRenderer {
     canvasContainer.style.width = '100%';
     canvasContainer.style.height = '600px';
     canvasContainer.style.position = 'relative';
-    canvasContainer.style.backgroundColor = '#0a0e27';
+    canvasContainer.style.backgroundColor = `#${Model3DRenderer.BACKGROUND_COLOR.toString(16).padStart(6, '0')}`;
     canvasContainer.style.borderRadius = '8px';
     canvasContainer.style.overflow = 'hidden';
 
@@ -72,8 +75,8 @@ class Model3DRenderer {
 
     // Scene with gradient background
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a0e27);
-    this.scene.fog = new THREE.Fog(0x0a0e27, Model3DRenderer.FOG_NEAR, Model3DRenderer.FOG_FAR);
+    this.scene.background = new THREE.Color(Model3DRenderer.BACKGROUND_COLOR);
+    this.scene.fog = new THREE.Fog(Model3DRenderer.BACKGROUND_COLOR, Model3DRenderer.FOG_NEAR, Model3DRenderer.FOG_FAR);
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(Model3DRenderer.CAMERA_FOV, width / height, Model3DRenderer.CAMERA_NEAR, Model3DRenderer.CAMERA_FAR);
@@ -247,7 +250,7 @@ class Model3DRenderer {
       const direction = e.deltaY > 0 ? 1 : -1;
       const newZ = this.camera.position.z + direction * Model3DRenderer.ZOOM_SPEED;
       // Clamp zoom to reasonable values
-      this.camera.position.z = Math.max(0.5, Math.min(20, newZ));
+      this.camera.position.z = Math.max(Model3DRenderer.MIN_ZOOM, Math.min(Model3DRenderer.MAX_ZOOM, newZ));
     });
 
     // Touch support for mobile
@@ -264,7 +267,7 @@ class Model3DRenderer {
         const delta = currentDistance - touchStartDistance;
         if (Math.abs(delta) > Model3DRenderer.TOUCH_GESTURE_THRESHOLD && this.model) {
           this.camera.position.z += delta * 0.01;
-          this.camera.position.z = Math.max(0.5, Math.min(20, this.camera.position.z));
+          this.camera.position.z = Math.max(Model3DRenderer.MIN_ZOOM, Math.min(Model3DRenderer.MAX_ZOOM, this.camera.position.z));
           touchStartDistance = currentDistance;
         }
       }
