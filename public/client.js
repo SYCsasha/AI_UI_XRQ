@@ -182,66 +182,21 @@ function setupButtons() {
     switchMode('render');
   });
 
-  document.getElementById('download-btn').addEventListener('click', () => {
-    const block = selectedBlock();
-    if (!block) return;
-
-    const extensionMap = {
-      javascript: '.js', typescript: '.ts', python: '.py', json: '.json',
-      html: '.html', css: '.css', bash: '.sh', shell: '.sh', yaml: '.yml',
-    };
-
-    let name = block.filename || `code-${Date.now()}`;
-    if (!name.includes('.')) {
-      name += extensionMap[block.lang] || '.txt';
-    }
-
-    const blob = new Blob([block.code || ''], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = name;
-    link.click();
-    URL.revokeObjectURL(url);
+  document.getElementById('refresh-btn').addEventListener('click', () => {
+    renderCurrent();
   });
 
-  document.getElementById('screenshot-btn').addEventListener('click', async () => {
-    const block = selectedBlock();
-    if (!block) return;
-    const lines = (block.code || '').split('\n');
-    const padding = 24;
-    const lineHeight = 24;
-    const maxLineLength = Math.max(24, ...lines.map((line) => line.length));
-    const width = Math.min(1800, Math.max(840, maxLineLength * 9 + padding * 2));
-    const height = Math.max(260, (lines.length + 4) * lineHeight + padding * 2);
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '16px ui-monospace, SFMono-Regular, Menlo, monospace';
-    ctx.fillText(`${block.filename || 'untitled'} · ${block.lang || 'plaintext'}`, padding, padding + 4);
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.beginPath();
-    ctx.moveTo(padding, padding + 16);
-    ctx.lineTo(width - padding, padding + 16);
-    ctx.stroke();
-
-    ctx.fillStyle = '#0f172a';
-    ctx.font = '18px ui-monospace, SFMono-Regular, Menlo, monospace';
-    lines.forEach((line, index) => {
-      const y = padding + 52 + index * lineHeight;
-      ctx.fillText(line || ' ', padding, y);
-    });
-
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `code-screenshot-${Date.now()}.png`;
-    link.click();
+  document.getElementById('fullscreen-btn').addEventListener('click', () => {
+    const renderCard = document.getElementById('render-card');
+    if (renderCard) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        renderCard.requestFullscreen().catch((err) => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      }
+    }
   });
 
   document.getElementById('toggle-sidebar').addEventListener('click', () => {

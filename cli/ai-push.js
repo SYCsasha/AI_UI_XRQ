@@ -289,22 +289,19 @@ async function withPushFallback(payload, host, port, context = {}) {
 
 if (hasFlag('--help') || hasFlag('-h')) {
   const helpText = `
-\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer
+\x1b[1mai-push\x1b[0m — Send code to LLM Result Showcase
 
 \x1b[33mUsage:\x1b[0m
-  ai-push [file]                     Push a file
-  echo "code" | ai-push              Push stdin
-  ai-push --lang py --stream         Stream stdin line-by-line
+  ai-push /path/to/file                Push a file by path
+  ai-push --type markdown /path/to/file.md  Push markdown file
+  ai-push --clear                      Clear all history
 
 \x1b[33mOptions:\x1b[0m
-  --lang,     -l  <lang>     Language (python, js, bash, json, ...)
   --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)
   --label,    -L  <text>     Label/description for this block
-  --filename, -f  <name>     Override filename shown in UI
   --session,  -s  <name>     Session name (default: 'default')
   --host,     -H  <host>     Server host (default: 127.0.0.1)
   --port,     -p  <port>     Server port (default: 7788)
-  --stream                   Stream mode: send each line as it arrives
   --clear                    Clear all code history in renderer
   --delete-last              Delete the last transmitted result
   --status                   Show server stats
@@ -322,11 +319,7 @@ const cfg = loadConfig();
 const HOST = getArg('--host') || getArg('-H') || cfg.host;
 const PORT = Number(getArg('--port') || getArg('-p') || cfg.port);
 const SESSION = getArg('--session') || getArg('-s') || cfg.session;
-const LANG = getArg('--lang') || getArg('-l');
 const TYPE = getArg('--type') || getArg('-t');
-const LABEL = getArg('--label') || getArg('-L') || '';
-const FILENAME_OPT = getArg('--filename') || getArg('-f');
-const STREAM = hasFlag('--stream');
 
 if (hasFlag('--config') || hasFlag('config')) {
   const next = { ...cfg };
@@ -389,11 +382,6 @@ if (hasFlag('--status')) {
   return;
 }
 
-const fileArg = args.find((a) => !a.startsWith('-') && a !== getArg('--lang') && a !== getArg('-l')
-  && a !== getArg('--label') && a !== getArg('-L') && a !== getArg('--filename')
-  && a !== getArg('-f') && a !== getArg('--session') && a !== getArg('-s')
-  && a !== getArg('--host') && a !== getArg('--port'));
-
 async function sendOne(payload, sourceLabel) {
   const res = await withPushFallback(payload, HOST, PORT, {
     payloadMeta: { source: sourceLabel, filename: payload.filename, lang: payload.lang },
@@ -409,75 +397,34 @@ async function main() {
   await ensureAppDirs();
   await flushPending(HOST, PORT);
 
-  if (STREAM) {
-    const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
-    let lineNum = 0;
-    for await (const line of rl) {
-      lineNum += 1;
-      const filename = FILENAME_OPT || `stream-line-${lineNum}`;
-      const lang = LANG || 'plaintext';
-      const contentType = TYPE || detectContentType(filename, lang, line);
-      const ok = await sendOne({
-        lang,
-        code: line,
-        filename,
-        label: LABEL || `Line ${lineNum}`,
-        session: SESSION,
-        contentType,
-        meta: { stream: true, lineNum },
-      }, 'stream');
-      process.stdout.write(ok ? '\x1b[32m·\x1b[0m' : '\x1b[31m✗\x1b[0m');
-    }
-    console.log(`\n\x1b[32m✓\x1b[0m Streamed ${lineNum} lines`);
-    return;
+  const fileArg = args.find((a) => !a.startsWith('-') && a !== getArg('--type') && a !== getArg('-t')
+    && a !== getArg('--label') && a !== getArg('-L') && a !== getArg('--session')
+    && a !== getArg('-s') && a !== getArg('--host') && a !== getArg('--port'));
+
+  if (!fileArg || !fs.existsSync(fileArg)) {
+    console.error('\x1b[31m✗\x1b[0m File path required. Use: ai-push <file>');
+    process.exit(1);
   }
 
-  if (fileArg && fs.existsSync(fileArg)) {
-    const code = fs.readFileSync(fileArg, 'utf8');
-    const filename = FILENAME_OPT || path.basename(fileArg);
-    const lang = LANG || detectLang(fileArg);
-    const contentType = TYPE || detectContentType(filename, lang, code);
-    const ok = await sendOne({
-      lang,
-      code,
-      filename,
-      label: LABEL,
-      session: SESSION,
-      contentType,
-      meta: { source: 'file' },
-    }, 'file');
-    if (ok) console.log(`\x1b[32m✓\x1b[0m Pushed \x1b[1m${filename}\x1b[0m (${lang}, ${code.length} chars)`);
-    return;
-  }
+  const code = fs.readFileSync(fileArg, 'utf8');
+  const filename = path.basename(fileArg);
+  const lang = detectLang(fileArg);
+  const label = getArg('--label') || getArg('-L') || '';
+  const contentType = TYPE || detectContentType(filename, lang, code);
 
-  if (!process.stdin.isTTY || !fileArg) {
-    const chunks = [];
-    process.stdin.on('data', (chunk) => chunks.push(chunk));
-    process.stdin.on('end', async () => {
-      const code = Buffer.concat(chunks).toString('utf8').trimEnd();
-      if (!code) {
-        console.error('\x1b[31m✗\x1b[0m No input received');
-        process.exit(1);
-      }
-      const filename = FILENAME_OPT || 'stdin';
-      const lang = LANG || 'plaintext';
-      const contentType = TYPE || detectContentType(filename, lang, code);
-      const ok = await sendOne({
-        lang,
-        code,
-        filename,
-        label: LABEL,
-        session: SESSION,
-        contentType,
-        meta: { source: 'stdin' },
-      }, 'stdin');
-      if (ok) console.log(`\x1b[32m✓\x1b[0m Pushed stdin (${lang}, ${code.length} chars)`);
-    });
-    return;
-  }
+  const ok = await sendOne({
+    lang,
+    code,
+    filename,
+    label,
+    session: SESSION,
+    contentType,
+    meta: { source: 'file' },
+  }, 'file');
 
-  console.error('\x1b[31m✗\x1b[0m No input. Use: ai-push <file> or echo "code" | ai-push');
-  process.exit(1);
+  if (ok) {
+    console.log(`\x1b[32m✓\x1b[0m Pushed \x1b[1m${filename}\x1b[0m (${lang}, ${code.length} chars)`);
+  }
 }
 
 main().catch(async (error) => {

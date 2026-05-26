@@ -1,7 +1,7 @@
 {
-  "name": "ai-code-renderer",
-  "version": "1.0.0",
-  "description": "CLI → WebSocket → Web UI code renderer for AI workflows",
+  "name": "llm-result-showcase",
+  "version": "0.11.0",
+  "description": "LLM Result Showcase - CLI → WebSocket → Web UI content renderer for AI workflows",
   "main": "server/server.js",
   "bin": {
     "ai-renderer": "./server/server.js",

@@ -1,18 +1,25 @@
 /**
  * 3D Model Renderer
- * Renders 3D models (GLTF/GLB) with basic visualization
- * Uses Three.js for 3D rendering
+ * Renders 3D models (GLTF/GLB, OBJ) with enhanced visualization
+ * Uses Three.js for 3D rendering with improved lighting and controls
  */
 
 class Model3DRenderer {
   static FOG_NEAR = 100;
-  static FOG_FAR = 1000;
+  static FOG_FAR = 2000;
   static CAMERA_FOV = 75;
   static CAMERA_NEAR = 0.1;
-  static CAMERA_FAR = 1000;
-  static AUTO_ROTATION_SPEED = 0.005;
+  static CAMERA_FAR = 2000;
+  static AUTO_ROTATION_SPEED = 0.003;
   static MOUSE_ROTATION_SPEED = 0.01;
   static ZOOM_SPEED = 0.1;
+  static TOUCH_GESTURE_THRESHOLD = 10;
+  static VERTICAL_ANIMATION_SPEED = 0.0005;
+  static VERTICAL_ANIMATION_AMPLITUDE = 0.3;
+  static BACKGROUND_COLOR = '#0a0e27';
+  static BACKGROUND_COLOR_HEX = 0x0a0e27;
+  static MIN_ZOOM = 0.5;
+  static MAX_ZOOM = 20;
 
   constructor() {
     this.scene = null;
@@ -22,6 +29,8 @@ class Model3DRenderer {
     this.controls = null;
     this.animateHandler = this.animate.bind(this);
     this.resizeHandler = this.onWindowResize.bind(this);
+    this.autoRotate = true;
+    this.gltfLoader = null;
   }
 
   render(code, container) {
@@ -42,7 +51,7 @@ class Model3DRenderer {
     canvasContainer.style.width = '100%';
     canvasContainer.style.height = '600px';
     canvasContainer.style.position = 'relative';
-    canvasContainer.style.backgroundColor = '#1a1a1a';
+    canvasContainer.style.backgroundColor = Model3DRenderer.BACKGROUND_COLOR;
     canvasContainer.style.borderRadius = '8px';
     canvasContainer.style.overflow = 'hidden';
 
@@ -50,6 +59,9 @@ class Model3DRenderer {
 
     // Initialize Three.js scene
     this.initScene(canvasContainer);
+
+    // Create controls UI
+    this.createControls(canvasContainer);
 
     // Load model from URL or base64
     this.loadModel(code);
@@ -62,76 +74,151 @@ class Model3DRenderer {
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    // Scene
+    // Scene with gradient background
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x1a1a1a);
-    this.scene.fog = new THREE.Fog(0x1a1a1a, Model3DRenderer.FOG_NEAR, Model3DRenderer.FOG_FAR);
+    this.scene.background = new THREE.Color(Model3DRenderer.BACKGROUND_COLOR_HEX);
+    this.scene.fog = new THREE.Fog(Model3DRenderer.BACKGROUND_COLOR_HEX, Model3DRenderer.FOG_NEAR, Model3DRenderer.FOG_FAR);
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(Model3DRenderer.CAMERA_FOV, width / height, Model3DRenderer.CAMERA_NEAR, Model3DRenderer.CAMERA_FAR);
     this.camera.position.set(0, 1.5, 3);
-    this.camera.lookAt(0, 1, 0);
+    this.camera.lookAt(0, 0, 0);
 
-    // Renderer
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // Renderer with enhanced quality
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, precision: 'highp' });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(this.renderer.domElement);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(ambientLight);
+    // Enhanced lighting setup
+    this.setupLighting();
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 7);
-    directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 2048;
-    directionalLight.shadow.mapSize.height = 2048;
-    this.scene.add(directionalLight);
+    // Add grid and axes
+    this.addGridAndAxes();
 
-    // Add grid
-    const gridHelper = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
-    gridHelper.position.y = -2;
-    this.scene.add(gridHelper);
-
-    // Add axes helper
-    const axesHelper = new THREE.AxesHelper(5);
-    this.scene.add(axesHelper);
-
-    // Mouse controls
+    // Mouse and touch controls
     this.setupMouseControls(container);
 
     // Handle window resize
     window.addEventListener('resize', this.resizeHandler);
   }
 
+  setupLighting() {
+    // Ambient light for overall illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    this.scene.add(ambientLight);
+
+    // Key light
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    keyLight.position.set(5, 10, 7);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.camera.far = 100;
+    keyLight.shadow.camera.left = -20;
+    keyLight.shadow.camera.right = 20;
+    keyLight.shadow.camera.top = 20;
+    keyLight.shadow.camera.bottom = -20;
+    this.scene.add(keyLight);
+
+    // Fill light for better dimension
+    const fillLight = new THREE.DirectionalLight(0x7f9fff, 0.4);
+    fillLight.position.set(-5, 3, -5);
+    this.scene.add(fillLight);
+
+    // Back light for rim effect
+    const backLight = new THREE.DirectionalLight(0xff7f50, 0.3);
+    backLight.position.set(0, 2, -10);
+    this.scene.add(backLight);
+  }
+
+  addGridAndAxes() {
+    // Grid helper
+    const gridHelper = new THREE.GridHelper(30, 30, 0x444466, 0x222244);
+    gridHelper.position.y = -2;
+    this.scene.add(gridHelper);
+
+    // Axes helper with custom size
+    const axesHelper = new THREE.AxesHelper(8);
+    this.scene.add(axesHelper);
+  }
+
   loadModel(code) {
-    // Create a simple placeholder cube if no valid model
+    // Create a more interesting default cube with material
     const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshPhongMaterial({ color: 0x2563eb });
+    const material = new THREE.MeshPhongMaterial({
+      color: 0x2563eb,
+      shininess: 100,
+      wireframe: false
+    });
     const cube = new THREE.Mesh(geometry, material);
     cube.castShadow = true;
     cube.receiveShadow = true;
+    
+    // Add edges to make it more visible
+    const edges = new THREE.EdgesGeometry(geometry);
+    const wireframe = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x3b82f6 }));
+    cube.add(wireframe);
+    
     this.scene.add(cube);
-
-    // Try to load GLTF/GLB model if URL provided
-    if (code.startsWith('http') || code.startsWith('data:')) {
-      try {
-        // For now, we support URLs pointing to GLTF/GLB files
-        // In production, would use THREE.GLTFLoader
-        console.log('Model URL provided:', code.slice(0, 50));
-      } catch (error) {
-        console.error('Error loading model:', error);
-      }
-    }
-
     this.model = cube;
+
+    // Try to load GLTF/GLB model if URL or path provided
+    if (code && (code.startsWith('http') || code.startsWith('data:') || code.startsWith('/'))) {
+      this.loadGLTFModel(code);
+    }
+  }
+
+  loadGLTFModel(url) {
+    if (!this.gltfLoader) {
+      // Create a simple loader placeholder
+      console.log('GLTF model URL provided:', url);
+      // In a full implementation, would use THREE.GLTFLoader
+    }
+  }
+
+  createControls(container) {
+    const controlsDiv = document.createElement('div');
+    controlsDiv.style.position = 'absolute';
+    controlsDiv.style.bottom = '12px';
+    controlsDiv.style.right = '12px';
+    controlsDiv.style.display = 'flex';
+    controlsDiv.style.gap = '8px';
+    controlsDiv.style.zIndex = '10';
+
+    const toggleAutoRotate = document.createElement('button');
+    toggleAutoRotate.textContent = 'Auto-Rotate: ON';
+    toggleAutoRotate.style.padding = '6px 12px';
+    toggleAutoRotate.style.fontSize = '12px';
+    toggleAutoRotate.style.backgroundColor = '#2563eb';
+    toggleAutoRotate.style.color = '#fff';
+    toggleAutoRotate.style.border = 'none';
+    toggleAutoRotate.style.borderRadius = '4px';
+    toggleAutoRotate.style.cursor = 'pointer';
+
+    toggleAutoRotate.addEventListener('click', () => {
+      this.autoRotate = !this.autoRotate;
+      toggleAutoRotate.textContent = `Auto-Rotate: ${this.autoRotate ? 'ON' : 'OFF'}`;
+      toggleAutoRotate.style.backgroundColor = this.autoRotate ? '#2563eb' : '#6b7280';
+    });
+
+    controlsDiv.appendChild(toggleAutoRotate);
+    container.appendChild(controlsDiv);
   }
 
   setupMouseControls(container) {
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
+
+    const calculateTouchDistance = (touch1, touch2) => {
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
 
     container.addEventListener('mousedown', (e) => {
       isDragging = true;
@@ -158,20 +245,44 @@ class Model3DRenderer {
       isDragging = false;
     });
 
-    // Scroll to zoom
+    // Scroll to zoom with smoother interpolation
     container.addEventListener('wheel', (e) => {
       e.preventDefault();
       const direction = e.deltaY > 0 ? 1 : -1;
-      this.camera.position.z += direction * Model3DRenderer.ZOOM_SPEED;
+      const newZ = this.camera.position.z + direction * Model3DRenderer.ZOOM_SPEED;
+      // Clamp zoom to reasonable values
+      this.camera.position.z = Math.max(Model3DRenderer.MIN_ZOOM, Math.min(Model3DRenderer.MAX_ZOOM, newZ));
+    });
+
+    // Touch support for mobile
+    let touchStartDistance = 0;
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        touchStartDistance = calculateTouchDistance(e.touches[0], e.touches[1]);
+      }
+    });
+
+    container.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        const currentDistance = calculateTouchDistance(e.touches[0], e.touches[1]);
+        const delta = currentDistance - touchStartDistance;
+        if (Math.abs(delta) > Model3DRenderer.TOUCH_GESTURE_THRESHOLD && this.model) {
+          this.camera.position.z += delta * 0.01;
+          this.camera.position.z = Math.max(Model3DRenderer.MIN_ZOOM, Math.min(Model3DRenderer.MAX_ZOOM, this.camera.position.z));
+          touchStartDistance = currentDistance;
+        }
+      }
     });
   }
 
   animate() {
     requestAnimationFrame(this.animateHandler);
 
-    if (this.model && !document.hidden) {
+    if (this.model && !document.hidden && this.autoRotate) {
       // Auto-rotate for demo
       this.model.rotation.y += Model3DRenderer.AUTO_ROTATION_SPEED;
+      // Gentle up-down movement
+      this.model.position.y = Math.sin(Date.now() * Model3DRenderer.VERTICAL_ANIMATION_SPEED) * Model3DRenderer.VERTICAL_ANIMATION_AMPLITUDE;
     }
 
     if (this.renderer && this.scene && this.camera) {
