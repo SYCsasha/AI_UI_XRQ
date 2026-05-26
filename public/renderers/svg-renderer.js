@@ -120,15 +120,24 @@ class SvgRenderer {
     stopBtn.style.fontSize = '12px';
 
     playBtn.addEventListener('click', () => {
-      this.playAnimations(svgElement);
+      if (svgElement.unpauseAnimations) {
+        svgElement.unpauseAnimations();
+      }
     });
 
     pauseBtn.addEventListener('click', () => {
-      this.pauseAnimations(svgElement);
+      if (svgElement.pauseAnimations) {
+        svgElement.pauseAnimations();
+      }
     });
 
     stopBtn.addEventListener('click', () => {
-      this.stopAnimations(svgElement);
+      if (svgElement.pauseAnimations) {
+        svgElement.pauseAnimations();
+      }
+      if (svgElement.setCurrentTime) {
+        svgElement.setCurrentTime(0);
+      }
     });
 
     controlsDiv.appendChild(playBtn);
@@ -139,29 +148,23 @@ class SvgRenderer {
   }
 
   playAnimations(svgElement) {
-    const animations = svgElement.querySelectorAll('animate, animateMotion, animateTransform');
-    animations.forEach((anim) => {
-      if (anim.unpauseAnimations) {
-        anim.unpauseAnimations();
-      }
-    });
+    if (svgElement && svgElement.unpauseAnimations) {
+      svgElement.unpauseAnimations();
+    }
   }
 
   pauseAnimations(svgElement) {
-    const animations = svgElement.querySelectorAll('animate, animateMotion, animateTransform');
-    animations.forEach((anim) => {
-      if (anim.pauseAnimations) {
-        anim.pauseAnimations();
-      }
-    });
+    if (svgElement && svgElement.pauseAnimations) {
+      svgElement.pauseAnimations();
+    }
   }
 
   stopAnimations(svgElement) {
-    svgElement.pauseAnimations();
-    // Reset to initial state
-    const animations = svgElement.querySelectorAll('animate, animateMotion, animateTransform');
-    animations.forEach((anim) => {
-      anim.setCurrentTime(0);
-    });
+    if (svgElement && svgElement.pauseAnimations) {
+      svgElement.pauseAnimations();
+    }
+    if (svgElement && svgElement.setCurrentTime) {
+      svgElement.setCurrentTime(0);
+    }
   }
 }

@@ -4,13 +4,13 @@
  * Uses Three.js for 3D rendering
  */
 
-const FOG_NEAR = 100;
-const FOG_FAR = 1000;
-const CAMERA_FOV = 75;
-const CAMERA_NEAR = 0.1;
-const CAMERA_FAR = 1000;
-
 class Model3DRenderer {
+  static FOG_NEAR = 100;
+  static FOG_FAR = 1000;
+  static CAMERA_FOV = 75;
+  static CAMERA_NEAR = 0.1;
+  static CAMERA_FAR = 1000;
+
   constructor() {
     this.scene = null;
     this.camera = null;
@@ -62,10 +62,10 @@ class Model3DRenderer {
     // Scene
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1a1a1a);
-    this.scene.fog = new THREE.Fog(0x1a1a1a, FOG_NEAR, FOG_FAR);
+    this.scene.fog = new THREE.Fog(0x1a1a1a, Model3DRenderer.FOG_NEAR, Model3DRenderer.FOG_FAR);
 
     // Camera
-    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, width / height, CAMERA_NEAR, CAMERA_FAR);
+    this.camera = new THREE.PerspectiveCamera(Model3DRenderer.CAMERA_FOV, width / height, Model3DRenderer.CAMERA_NEAR, Model3DRenderer.CAMERA_FAR);
     this.camera.position.set(0, 1.5, 3);
     this.camera.lookAt(0, 1, 0);
 
