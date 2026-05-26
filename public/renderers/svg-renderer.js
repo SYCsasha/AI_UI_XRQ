@@ -141,7 +141,7 @@ class SvgRenderer {
   playAnimations(svgElement) {
     const animations = svgElement.querySelectorAll('animate, animateMotion, animateTransform');
     animations.forEach((anim) => {
-      if (anim.pauseAnimations) {
+      if (anim.unpauseAnimations) {
         anim.unpauseAnimations();
       }
     });

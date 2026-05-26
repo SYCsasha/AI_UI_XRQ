@@ -4,6 +4,12 @@
  * Uses Three.js for 3D rendering
  */
 
+const FOG_NEAR = 100;
+const FOG_FAR = 1000;
+const CAMERA_FOV = 75;
+const CAMERA_NEAR = 0.1;
+const CAMERA_FAR = 1000;
+
 class Model3DRenderer {
   constructor() {
     this.scene = null;
@@ -11,6 +17,8 @@ class Model3DRenderer {
     this.renderer = null;
     this.model = null;
     this.controls = null;
+    this.animateHandler = this.animate.bind(this);
+    this.resizeHandler = this.onWindowResize.bind(this);
   }
 
   render(code, container) {
@@ -44,7 +52,7 @@ class Model3DRenderer {
     this.loadModel(code);
 
     // Start animation loop
-    this.animate();
+    requestAnimationFrame(this.animateHandler);
   }
 
   initScene(container) {
@@ -54,10 +62,10 @@ class Model3DRenderer {
     // Scene
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1a1a1a);
-    this.scene.fog = new THREE.Fog(0x1a1a1a, 100, 1000);
+    this.scene.fog = new THREE.Fog(0x1a1a1a, FOG_NEAR, FOG_FAR);
 
     // Camera
-    this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, width / height, CAMERA_NEAR, CAMERA_FAR);
     this.camera.position.set(0, 1.5, 3);
     this.camera.lookAt(0, 1, 0);
 
@@ -92,7 +100,7 @@ class Model3DRenderer {
     this.setupMouseControls(container);
 
     // Handle window resize
-    window.addEventListener('resize', () => this.onWindowResize(container));
+    window.addEventListener('resize', this.resizeHandler);
   }
 
   loadModel(code) {
@@ -156,18 +164,23 @@ class Model3DRenderer {
     });
   }
 
-  animate = () => {
-    requestAnimationFrame(this.animate);
+  animate() {
+    requestAnimationFrame(this.animateHandler);
 
     if (this.model && !document.hidden) {
       // Auto-rotate for demo
       this.model.rotation.y += 0.005;
     }
 
-    this.renderer.render(this.scene, this.camera);
+    if (this.renderer && this.scene && this.camera) {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
-  onWindowResize = (container) => {
+  onWindowResize() {
+    const container = this.renderer?.domElement?.parentElement;
+    if (!container) return;
+
     const width = container.clientWidth;
     const height = container.clientHeight;
 
@@ -182,6 +195,6 @@ class Model3DRenderer {
     if (this.renderer) {
       this.renderer.dispose();
     }
-    window.removeEventListener('resize', this.onWindowResize);
+    window.removeEventListener('resize', this.resizeHandler);
   }
 }
