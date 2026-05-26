@@ -14,6 +14,8 @@ class Model3DRenderer {
   static MOUSE_ROTATION_SPEED = 0.01;
   static ZOOM_SPEED = 0.1;
   static TOUCH_GESTURE_THRESHOLD = 10;
+  static VERTICAL_ANIMATION_SPEED = 0.0005;
+  static VERTICAL_ANIMATION_AMPLITUDE = 0.3;
 
   constructor() {
     this.scene = null;
@@ -274,7 +276,7 @@ class Model3DRenderer {
       // Auto-rotate for demo
       this.model.rotation.y += Model3DRenderer.AUTO_ROTATION_SPEED;
       // Gentle up-down movement
-      this.model.position.y = Math.sin(Date.now() * 0.0005) * 0.3;
+      this.model.position.y = Math.sin(Date.now() * Model3DRenderer.VERTICAL_ANIMATION_SPEED) * Model3DRenderer.VERTICAL_ANIMATION_AMPLITUDE;
     }
 
     if (this.renderer && this.scene && this.camera) {
