@@ -292,9 +292,9 @@ if (hasFlag('--help') || hasFlag('-h')) {
 \x1b[1mai-push\x1b[0m — Send code to LLM Result Showcase
 
 \x1b[33mUsage:\x1b[0m
-  ai-push [file]                     Push a file by path
-  ai-push --type markdown README.md  Push markdown file
-  ai-push --clear                    Clear all history
+  ai-push /path/to/file                Push a file by path
+  ai-push --type markdown /path/to/file.md  Push markdown file
+  ai-push --clear                      Clear all history
 
 \x1b[33mOptions:\x1b[0m
   --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)

@@ -83,7 +83,7 @@ class Model3DRenderer {
     // Renderer with enhanced quality
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, precision: 'highp' });
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(window.devicePixelRatio || 1);
+    this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -210,6 +210,12 @@ class Model3DRenderer {
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
 
+    const calculateTouchDistance = (touch1, touch2) => {
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
     container.addEventListener('mousedown', (e) => {
       isDragging = true;
       previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -248,17 +254,13 @@ class Model3DRenderer {
     let touchStartDistance = 0;
     container.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        touchStartDistance = Math.sqrt(dx * dx + dy * dy);
+        touchStartDistance = calculateTouchDistance(e.touches[0], e.touches[1]);
       }
     });
 
     container.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2) {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+        const currentDistance = calculateTouchDistance(e.touches[0], e.touches[1]);
         const delta = currentDistance - touchStartDistance;
         if (Math.abs(delta) > Model3DRenderer.TOUCH_GESTURE_THRESHOLD && this.model) {
           this.camera.position.z += delta * 0.01;
