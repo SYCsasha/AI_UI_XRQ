@@ -12,6 +12,10 @@ class RendererDispatcher {
       html: new HtmlPreviewRenderer(),
       image: new ImageRenderer(),
       pdf: new PdfRenderer(),
+      video: new VideoRenderer(),
+      audio: new AudioRenderer(),
+      svg: new SvgRenderer(),
+      model3d: new Model3DRenderer(),
     };
     this.currentRenderer = null;
   }
@@ -38,10 +42,26 @@ class RendererDispatcher {
       'json': 'json',
       'html': 'html',
       'xml': 'html',
-      'svg': 'html',
+      'svg': 'svg',
       'image': 'image',
       'img': 'image',
       'pdf': 'pdf',
+      'video': 'video',
+      'mp4': 'video',
+      'webm': 'video',
+      'mov': 'video',
+      'avi': 'video',
+      'audio': 'audio',
+      'music': 'audio',
+      'mp3': 'audio',
+      'wav': 'audio',
+      'ogg': 'audio',
+      'aac': 'audio',
+      'm4a': 'audio',
+      'model': 'model3d',
+      'model3d': 'model3d',
+      'gltf': 'model3d',
+      'glb': 'model3d',
     };
 
     if (typeMap[lang]) {
@@ -55,13 +75,32 @@ class RendererDispatcher {
       }
     }
 
+    // Video format detection by filename
+    if (/\.(mp4|webm|ogg|ogv|mov|avi|mkv|flv|m3u8)$/i.test(filename)) {
+      return 'video';
+    }
+
+    // Audio format detection by filename
+    if (/\.(mp3|wav|ogg|oga|webm|aac|flac|m4a|wma)$/i.test(filename)) {
+      return 'audio';
+    }
+
     // Image format detection by filename
     if (/\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(filename)) {
       return 'image';
     }
 
+    // 3D model format detection
+    if (/\.(gltf|glb|obj|fbx|dae|3ds)$/i.test(filename)) {
+      return 'model3d';
+    }
+
     // HTML detection by content start
     const code = block.code || '';
+    if (code.trim().startsWith('<svg') || filename.endsWith('.svg')) {
+      return 'svg';
+    }
+
     if (code.trim().startsWith('<') || code.includes('<!DOCTYPE')) {
       return 'html';
     }
@@ -117,6 +156,10 @@ class RendererDispatcher {
         renderer.render(block.code, container);
         break;
 
+      case 'svg':
+        renderer.render(block.code, container);
+        break;
+
       case 'image':
         renderer.render(block.code, container, {
           filename: block.filename
@@ -124,6 +167,18 @@ class RendererDispatcher {
         break;
 
       case 'pdf':
+        renderer.render(block.code, container);
+        break;
+
+      case 'video':
+        renderer.render(block.code, container);
+        break;
+
+      case 'audio':
+        renderer.render(block.code, container);
+        break;
+
+      case 'model3d':
         renderer.render(block.code, container);
         break;
 
@@ -147,6 +202,10 @@ class RendererDispatcher {
       html: 'HTML预览',
       image: '图像',
       pdf: 'PDF',
+      video: '视频',
+      audio: '音频',
+      svg: 'SVG动画',
+      model3d: '3D模型',
     };
     return names[type] || '内容';
   }

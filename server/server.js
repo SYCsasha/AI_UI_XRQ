@@ -352,6 +352,19 @@ const httpServer = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === '/api/delete-last' && req.method === 'POST') {
+      if (codeHistory.length > 0) {
+        const removed = codeHistory.shift();
+        if (removed?.id) historyCache.delete(removed.id);
+        schedulePersist();
+        broadcast({ type: 'delete_last', data: { id: removed.id } });
+        sendJson(req, res, 200, { ok: true, deleted: removed.id });
+      } else {
+        sendJson(req, res, 200, { ok: false, error: 'No history to delete' });
+      }
+      return;
+    }
+
     if (pathname === '/api/stats' && req.method === 'GET') {
       sendJson(req, res, 200, {
         ok: true,

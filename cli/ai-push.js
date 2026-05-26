@@ -92,9 +92,12 @@ function detectContentType(filename, lang, content) {
   const contentTypeLangMap = {
     'markdown': 'markdown', 'md': 'markdown', 'mdown': 'markdown',
     'json': 'json',
-    'html': 'html', 'xml': 'html', 'svg': 'html',
+    'html': 'html', 'xml': 'html', 'svg': 'svg',
     'image': 'image', 'img': 'image',
     'pdf': 'pdf',
+    'video': 'video', 'mp4': 'video', 'webm': 'video', 'mov': 'video', 'avi': 'video',
+    'audio': 'audio', 'music': 'audio', 'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'aac': 'audio', 'm4a': 'audio',
+    'model': 'model3d', 'model3d': 'model3d', 'gltf': 'model3d', 'glb': 'model3d',
   };
 
   // Check by lang parameter
@@ -113,8 +116,26 @@ function detectContentType(filename, lang, content) {
     return 'image';
   }
 
+  // Check for video extensions
+  if (/\.(mp4|webm|ogg|ogv|mov|avi|mkv|flv|m3u8)$/i.test(filename)) {
+    return 'video';
+  }
+
+  // Check for audio extensions
+  if (/\.(mp3|wav|ogg|oga|webm|aac|flac|m4a|wma)$/i.test(filename)) {
+    return 'audio';
+  }
+
+  // Check for 3D model extensions
+  if (/\.(gltf|glb|obj|fbx|dae|3ds)$/i.test(filename)) {
+    return 'model3d';
+  }
+
   // Check by content
   const trimmedContent = (content || '').trim();
+  if (trimmedContent.startsWith('<svg') || filename.endsWith('.svg')) {
+    return 'svg';
+  }
   if (trimmedContent.startsWith('<') || trimmedContent.includes('<!DOCTYPE')) {
     return 'html';
   }
@@ -267,7 +288,7 @@ async function withPushFallback(payload, host, port, context = {}) {
 }
 
 if (hasFlag('--help') || hasFlag('-h')) {
-  console.log(`\n\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer\n\n\x1b[33mUsage:\x1b[0m\n  ai-push [file]                     Push a file\n  echo "code" | ai-push              Push stdin\n  ai-push --lang py --stream         Stream stdin line-by-line\n\n\x1b[33mOptions:\x1b[0m\n  --lang,     -l  <lang>     Language (python, js, bash, json, ...)\n  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf)\n  --label,    -L  <text>     Label/description for this block\n  --filename, -f  <name>     Override filename shown in UI\n  --session,  -s  <name>     Session name (default: 'default')\n  --host,     -H  <host>     Server host (default: 127.0.0.1)\n  --port,     -p  <port>     Server port (default: 7788)\n  --stream                   Stream mode: send each line as it arrives\n  --clear                    Clear all code history in renderer\n  --status                   Show server stats\n  --config                   Save config (use with --host/--port/--session)\n    --help                     Show this help\n\n\x1b[33mEnv:\x1b[0m\n  AI_RENDERER_TIMEOUT_MS     HTTP request timeout in milliseconds (default: 10000)\n`);
+  console.log(`\n\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer\n\n\x1b[33mUsage:\x1b[0m\n  ai-push [file]                     Push a file\n  echo "code" | ai-push              Push stdin\n  ai-push --lang py --stream         Stream stdin line-by-line\n\n\x1b[33mOptions:\x1b[0m\n  --lang,     -l  <lang>     Language (python, js, bash, json, ...)\n  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)\n  --label,    -L  <text>     Label/description for this block\n  --filename, -f  <name>     Override filename shown in UI\n  --session,  -s  <name>     Session name (default: 'default')\n  --host,     -H  <host>     Server host (default: 127.0.0.1)\n  --port,     -p  <port>     Server port (default: 7788)\n  --stream                   Stream mode: send each line as it arrives\n  --clear                    Clear all code history in renderer\n  --delete-last              Delete the last transmitted result\n  --status                   Show server stats\n  --config                   Save config (use with --host/--port/--session)\n    --help                     Show this help\n\n\x1b[33mEnv:\x1b[0m\n  AI_RENDERER_TIMEOUT_MS     HTTP request timeout in milliseconds (default: 10000)\n`);
   process.exit(0);
 }
 
@@ -308,6 +329,19 @@ if (hasFlag('--clear')) {
     })
     .catch(async (error) => {
       await logError(error, { host: HOST, port: PORT, command: 'clear' });
+      console.error(`\x1b[31m✗\x1b[0m Cannot reach server: ${error.message}`);
+    });
+  return;
+}
+
+if (hasFlag('--delete-last')) {
+  requestJson({ host: HOST, port: PORT, pathName: '/api/delete-last', method: 'POST' })
+    .then((res) => {
+      if (res.ok) console.log('\x1b[32m✓\x1b[0m Deleted last history entry');
+      else console.error(`\x1b[31m✗\x1b[0m ${res.error || 'Delete failed'}`);
+    })
+    .catch(async (error) => {
+      await logError(error, { host: HOST, port: PORT, command: 'delete-last' });
       console.error(`\x1b[31m✗\x1b[0m Cannot reach server: ${error.message}`);
     });
   return;
