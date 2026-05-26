@@ -16,7 +16,8 @@ class Model3DRenderer {
   static TOUCH_GESTURE_THRESHOLD = 10;
   static VERTICAL_ANIMATION_SPEED = 0.0005;
   static VERTICAL_ANIMATION_AMPLITUDE = 0.3;
-  static BACKGROUND_COLOR = 0x0a0e27;
+  static BACKGROUND_COLOR = '#0a0e27';
+  static BACKGROUND_COLOR_HEX = 0x0a0e27;
   static MIN_ZOOM = 0.5;
   static MAX_ZOOM = 20;
 
@@ -50,7 +51,7 @@ class Model3DRenderer {
     canvasContainer.style.width = '100%';
     canvasContainer.style.height = '600px';
     canvasContainer.style.position = 'relative';
-    canvasContainer.style.backgroundColor = `#${Model3DRenderer.BACKGROUND_COLOR.toString(16).padStart(6, '0')}`;
+    canvasContainer.style.backgroundColor = Model3DRenderer.BACKGROUND_COLOR;
     canvasContainer.style.borderRadius = '8px';
     canvasContainer.style.overflow = 'hidden';
 
@@ -75,8 +76,8 @@ class Model3DRenderer {
 
     // Scene with gradient background
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(Model3DRenderer.BACKGROUND_COLOR);
-    this.scene.fog = new THREE.Fog(Model3DRenderer.BACKGROUND_COLOR, Model3DRenderer.FOG_NEAR, Model3DRenderer.FOG_FAR);
+    this.scene.background = new THREE.Color(Model3DRenderer.BACKGROUND_COLOR_HEX);
+    this.scene.fog = new THREE.Fog(Model3DRenderer.BACKGROUND_COLOR_HEX, Model3DRenderer.FOG_NEAR, Model3DRenderer.FOG_FAR);
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(Model3DRenderer.CAMERA_FOV, width / height, Model3DRenderer.CAMERA_NEAR, Model3DRenderer.CAMERA_FAR);
