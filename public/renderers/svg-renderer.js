@@ -157,25 +157,4 @@ class SvgRenderer {
 
     container.appendChild(controlsDiv);
   }
-
-  playAnimations(svgElement) {
-    if (svgElement && svgElement.unpauseAnimations) {
-      svgElement.unpauseAnimations();
-    }
-  }
-
-  pauseAnimations(svgElement) {
-    if (svgElement && svgElement.pauseAnimations) {
-      svgElement.pauseAnimations();
-    }
-  }
-
-  stopAnimations(svgElement) {
-    if (svgElement && svgElement.pauseAnimations) {
-      svgElement.pauseAnimations();
-    }
-    if (svgElement && svgElement.setCurrentTime) {
-      svgElement.setCurrentTime(0);
-    }
-  }
 }
