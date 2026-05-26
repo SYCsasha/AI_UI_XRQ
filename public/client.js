@@ -324,6 +324,21 @@ function connectWs() {
       saveLocalHistory();
       renderSidebar();
       renderCurrent();
+      return;
+    }
+
+    if (msg.type === 'delete_last') {
+      const deletedId = msg.data?.id;
+      if (deletedId) {
+        blocks = blocks.filter((b) => b.id !== deletedId);
+        if (selectedId === deletedId) {
+          selectedId = blocks[0]?.id || null;
+        }
+        saveLocalHistory();
+        renderSidebar();
+        renderCurrent();
+      }
+      return;
     }
   };
 
