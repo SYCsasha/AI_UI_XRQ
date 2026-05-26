@@ -13,6 +13,7 @@ class Model3DRenderer {
   static AUTO_ROTATION_SPEED = 0.003;
   static MOUSE_ROTATION_SPEED = 0.01;
   static ZOOM_SPEED = 0.1;
+  static TOUCH_GESTURE_THRESHOLD = 10;
 
   constructor() {
     this.scene = null;
@@ -82,7 +83,7 @@ class Model3DRenderer {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio || 1);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(this.renderer.domElement);
@@ -257,7 +258,7 @@ class Model3DRenderer {
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const currentDistance = Math.sqrt(dx * dx + dy * dy);
         const delta = currentDistance - touchStartDistance;
-        if (Math.abs(delta) > 10 && this.model) {
+        if (Math.abs(delta) > Model3DRenderer.TOUCH_GESTURE_THRESHOLD && this.model) {
           this.camera.position.z += delta * 0.01;
           this.camera.position.z = Math.max(0.5, Math.min(20, this.camera.position.z));
           touchStartDistance = currentDistance;
