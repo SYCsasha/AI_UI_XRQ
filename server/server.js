@@ -355,10 +355,13 @@ const httpServer = http.createServer(async (req, res) => {
     if (pathname === '/api/delete-last' && req.method === 'POST') {
       if (codeHistory.length > 0) {
         const removed = codeHistory.pop();
-        if (removed?.id) historyCache.delete(removed.id);
+        if (removed && removed.id) {
+          historyCache.delete(removed.id);
+        }
         schedulePersist();
-        broadcast({ type: 'delete_last', data: { id: removed.id } });
-        sendJson(req, res, 200, { ok: true, deleted: removed.id });
+        const deletedId = removed && removed.id ? removed.id : null;
+        broadcast({ type: 'delete_last', data: { id: deletedId } });
+        sendJson(req, res, 200, { ok: true, deleted: deletedId });
       } else {
         sendJson(req, res, 200, { ok: false, error: 'No history to delete' });
       }

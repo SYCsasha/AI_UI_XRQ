@@ -3,6 +3,8 @@
  * Renders audio content with playback controls
  */
 
+const VISUALIZATION_BAR_COUNT = 40;
+
 class AudioRenderer {
   render(code, container) {
     container.innerHTML = '';
@@ -59,7 +61,7 @@ class AudioRenderer {
     visualization.style.marginTop = '8px';
     
     // Create simple bars for visualization
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < VISUALIZATION_BAR_COUNT; i++) {
       const bar = document.createElement('div');
       bar.style.width = '2px';
       bar.style.height = Math.random() * 50 + 10 + 'px';

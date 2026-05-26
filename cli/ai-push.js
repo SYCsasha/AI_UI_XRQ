@@ -288,7 +288,33 @@ async function withPushFallback(payload, host, port, context = {}) {
 }
 
 if (hasFlag('--help') || hasFlag('-h')) {
-  console.log(`\n\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer\n\n\x1b[33mUsage:\x1b[0m\n  ai-push [file]                     Push a file\n  echo "code" | ai-push              Push stdin\n  ai-push --lang py --stream         Stream stdin line-by-line\n\n\x1b[33mOptions:\x1b[0m\n  --lang,     -l  <lang>     Language (python, js, bash, json, ...)\n  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)\n  --label,    -L  <text>     Label/description for this block\n  --filename, -f  <name>     Override filename shown in UI\n  --session,  -s  <name>     Session name (default: 'default')\n  --host,     -H  <host>     Server host (default: 127.0.0.1)\n  --port,     -p  <port>     Server port (default: 7788)\n  --stream                   Stream mode: send each line as it arrives\n  --clear                    Clear all code history in renderer\n  --delete-last              Delete the last transmitted result\n  --status                   Show server stats\n  --config                   Save config (use with --host/--port/--session)\n    --help                     Show this help\n\n\x1b[33mEnv:\x1b[0m\n  AI_RENDERER_TIMEOUT_MS     HTTP request timeout in milliseconds (default: 10000)\n`);
+  const helpText = `
+\x1b[1mai-push\x1b[0m — Send code to AI Code Renderer
+
+\x1b[33mUsage:\x1b[0m
+  ai-push [file]                     Push a file
+  echo "code" | ai-push              Push stdin
+  ai-push --lang py --stream         Stream stdin line-by-line
+
+\x1b[33mOptions:\x1b[0m
+  --lang,     -l  <lang>     Language (python, js, bash, json, ...)
+  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)
+  --label,    -L  <text>     Label/description for this block
+  --filename, -f  <name>     Override filename shown in UI
+  --session,  -s  <name>     Session name (default: 'default')
+  --host,     -H  <host>     Server host (default: 127.0.0.1)
+  --port,     -p  <port>     Server port (default: 7788)
+  --stream                   Stream mode: send each line as it arrives
+  --clear                    Clear all code history in renderer
+  --delete-last              Delete the last transmitted result
+  --status                   Show server stats
+  --config                   Save config (use with --host/--port/--session)
+  --help                     Show this help
+
+\x1b[33mEnv:\x1b[0m
+  AI_RENDERER_TIMEOUT_MS     HTTP request timeout in milliseconds (default: 10000)
+`;
+  console.log(helpText);
   process.exit(0);
 }
 

@@ -10,6 +10,9 @@ class Model3DRenderer {
   static CAMERA_FOV = 75;
   static CAMERA_NEAR = 0.1;
   static CAMERA_FAR = 1000;
+  static AUTO_ROTATION_SPEED = 0.005;
+  static MOUSE_ROTATION_SPEED = 0.01;
+  static ZOOM_SPEED = 0.1;
 
   constructor() {
     this.scene = null;
@@ -140,8 +143,8 @@ class Model3DRenderer {
         const deltaX = e.clientX - previousMousePosition.x;
         const deltaY = e.clientY - previousMousePosition.y;
 
-        this.model.rotation.y += deltaX * 0.01;
-        this.model.rotation.x += deltaY * 0.01;
+        this.model.rotation.y += deltaX * Model3DRenderer.MOUSE_ROTATION_SPEED;
+        this.model.rotation.x += deltaY * Model3DRenderer.MOUSE_ROTATION_SPEED;
 
         previousMousePosition = { x: e.clientX, y: e.clientY };
       }
@@ -158,9 +161,8 @@ class Model3DRenderer {
     // Scroll to zoom
     container.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const zoomSpeed = 0.1;
       const direction = e.deltaY > 0 ? 1 : -1;
-      this.camera.position.z += direction * zoomSpeed;
+      this.camera.position.z += direction * Model3DRenderer.ZOOM_SPEED;
     });
   }
 
@@ -169,7 +171,7 @@ class Model3DRenderer {
 
     if (this.model && !document.hidden) {
       // Auto-rotate for demo
-      this.model.rotation.y += 0.005;
+      this.model.rotation.y += Model3DRenderer.AUTO_ROTATION_SPEED;
     }
 
     if (this.renderer && this.scene && this.camera) {

@@ -3,6 +3,17 @@
  * Renders SVG content with animation support
  */
 
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
 class SvgRenderer {
   render(code, container) {
     container.innerHTML = '';
@@ -58,7 +69,7 @@ class SvgRenderer {
         this.addAnimationControls(container, svgElement);
       }
     } catch (error) {
-      container.innerHTML = `<div class="svg-error">Error rendering SVG: ${escHtml(error.message)}</div>`;
+      container.innerHTML = `<div class="svg-error">Error rendering SVG: ${escapeHtml(error.message)}</div>`;
     }
   }
 
