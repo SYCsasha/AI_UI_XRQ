@@ -14,7 +14,8 @@
       <div class="actions actions-render" id="render-actions">
         <button id="edit-btn" class="btn">编辑</button>
         <button id="refresh-btn" class="btn">刷新</button>
-        <button id="fullscreen-btn" class="btn">全屏</button>
+        <button id="office-btn" class="btn">办公室</button>
+        <button id="theme-btn" class="btn">🌙 主题</button>
       </div>
       <div class="actions actions-code" id="code-actions">
         <button id="render-btn" class="btn btn-primary">渲染</button>
@@ -51,6 +52,22 @@
             <span id="editor-time">-</span>
           </div>
           <textarea id="editor" spellcheck="false" aria-label="代码编辑区"></textarea>
+        </section>
+      </section>
+
+      <section id="office-view" class="view office-view">
+        <aside id="office-sidebar" class="office-sidebar">
+          <div class="office-sidebar-header">办公文件</div>
+          <div id="office-file-list" class="office-file-list"></div>
+        </aside>
+        <section class="office-display-pane">
+          <div class="office-display-meta">
+            <span id="office-filename">-</span>
+            <button id="office-back-btn" class="btn">← 返回渲染</button>
+          </div>
+          <div id="office-display-content" class="office-display-content">
+            <div class="office-placeholder">选择一个办公文件以预览</div>
+          </div>
         </section>
       </section>
     </main>

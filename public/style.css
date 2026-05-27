@@ -9,6 +9,15 @@
   --mobile-tabs-height: 46px;
 }
 
+:root.dark-mode {
+  --bg: #1a1a1a;
+  --surface: #2d2d2d;
+  --text: #e4e4e7;
+  --muted: #a1a1aa;
+  --line: #3f3f46;
+  --primary: #3b82f6;
+}
+
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
@@ -446,4 +455,70 @@ body {
   margin: 16px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13px;
+}
+
+/* Office View Styles */
+.office-view { display: none; grid-template-columns: 250px 1fr; height: 100%; background: var(--bg); color: var(--text); }
+.mode-office .render-view { display: none; }
+.mode-office .code-view { display: none; }
+.mode-office .office-view { display: grid; }
+
+.office-sidebar {
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.office-sidebar-header {
+  padding: 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+.office-file-list {
+  flex: 1;
+  overflow-y: auto;
+}
+.office-file-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.2s;
+}
+.office-file-item:hover { background: var(--line); }
+.office-file-item.active { background: var(--primary); color: #fff; }
+.office-file-item-name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.office-file-item-type { margin-top: 4px; font-size: 11px; color: var(--muted); }
+.office-file-item.active .office-file-item-type { color: rgba(255, 255, 255, 0.7); }
+
+.office-display-pane { display: flex; flex-direction: column; min-width: 0; background: var(--surface); }
+.office-display-meta {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.office-display-content {
+  flex: 1;
+  width: 100%;
+  border: none;
+  padding: 16px;
+  overflow: auto;
+  background: var(--bg);
+}
+.office-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--muted);
+  font-size: 14px;
 }
