@@ -82,6 +82,8 @@ function detectLang(filename) {
     '.css': 'css', '.scss': 'scss', '.sql': 'sql', '.md': 'markdown',
     '.dockerfile': 'dockerfile', '.tf': 'hcl', '.lua': 'lua',
     '.r': 'r', '.swift': 'swift', '.kt': 'kotlin', '.dart': 'dart',
+    '.doc': 'office', '.docx': 'office', '.xls': 'office', '.xlsx': 'office',
+    '.ppt': 'office', '.pptx': 'office', '.odt': 'office', '.ods': 'office', '.odp': 'office',
   };
   const ext = path.extname(filename).toLowerCase();
   return extMap[ext] || 'plaintext';
@@ -98,6 +100,8 @@ function detectContentType(filename, lang, content) {
     'video': 'video', 'mp4': 'video', 'webm': 'video', 'mov': 'video', 'avi': 'video',
     'audio': 'audio', 'music': 'audio', 'mp3': 'audio', 'wav': 'audio', 'ogg': 'audio', 'aac': 'audio', 'm4a': 'audio',
     'model': 'model3d', 'model3d': 'model3d', 'gltf': 'model3d', 'glb': 'model3d',
+    'office': 'office', 'docx': 'office', 'doc': 'office', 'xlsx': 'office', 'xls': 'office', 'pptx': 'office', 'ppt': 'office',
+    'odt': 'office', 'ods': 'office', 'odp': 'office',
   };
 
   // Check by lang parameter
@@ -109,6 +113,11 @@ function detectContentType(filename, lang, content) {
   const extWithoutDot = filenameExt.slice(1).toLowerCase();
   if (contentTypeLangMap[extWithoutDot]) {
     return contentTypeLangMap[extWithoutDot];
+  }
+
+  // Check for office extensions
+  if (/\.(doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp)$/i.test(filename)) {
+    return 'office';
   }
 
   // Check for image extensions
@@ -294,10 +303,11 @@ if (hasFlag('--help') || hasFlag('-h')) {
 \x1b[33mUsage:\x1b[0m
   ai-push /path/to/file                Push a file by path
   ai-push --type markdown /path/to/file.md  Push markdown file
+  ai-push --type office /path/to/file.docx  Push office file
   ai-push --clear                      Clear all history
 
 \x1b[33mOptions:\x1b[0m
-  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d)
+  --type,     -t  <type>     Content type (code, markdown, json, html, image, pdf, video, audio, svg, model3d, office)
   --label,    -L  <text>     Label/description for this block
   --session,  -s  <name>     Session name (default: 'default')
   --host,     -H  <host>     Server host (default: 127.0.0.1)

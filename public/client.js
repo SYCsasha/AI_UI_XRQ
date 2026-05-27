@@ -2,6 +2,7 @@ const PAGE_SIZE = 50;
 const SCROLL_THRESHOLD_PX = 80;
 const FALLBACK_POLL_PAGE_SIZE = 10;
 const LOCAL_HISTORY_KEY = 'ai_renderer_history_v1';
+const THEME_KEY = 'ai_renderer_theme';
 const WS_URL = `ws://${location.host}`;
 
 let ws = null;
@@ -15,6 +16,8 @@ let selectedId = null;
 let loadedOffset = 0;
 let hasMore = true;
 let loadingPage = false;
+let officeBlocks = [];
+let selectedOfficeId = null;
 
 const app = document.getElementById('app');
 const renderCodeEl = document.getElementById('render-code');
@@ -76,8 +79,13 @@ function mergeBlocks(items, append = false) {
     selectedId = blocks[0]?.id || null;
   }
 
+  // Separate office files
+  officeBlocks = blocks.filter(b => b.meta?.contentType === 'office' || isOfficeFile(b.filename));
+  if (!selectedOfficeId && officeBlocks.length) selectedOfficeId = officeBlocks[0].id;
+  
   saveLocalHistory();
   renderSidebar();
+  renderOfficeList();
   renderCurrent();
 }
 
@@ -135,6 +143,49 @@ function renderSidebar() {
 function switchMode(mode) {
   app.classList.toggle('mode-render', mode === 'render');
   app.classList.toggle('mode-code', mode === 'code');
+  app.classList.toggle('mode-office', mode === 'office');
+}
+
+function saveTheme(isDark) {
+  try {
+    localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function loadTheme() {
+  try {
+    const theme = localStorage.getItem(THEME_KEY) || 'light';
+    const isDark = theme === 'dark';
+    applyTheme(isDark);
+    return isDark;
+  } catch {
+    return false;
+  }
+}
+
+function applyTheme(isDark) {
+  const html = document.documentElement;
+  if (isDark) {
+    html.classList.add('dark-mode');
+  } else {
+    html.classList.remove('dark-mode');
+  }
+  updateThemeButton(isDark);
+}
+
+function updateThemeButton(isDark) {
+  const btn = document.getElementById('theme-btn');
+  if (btn) {
+    btn.textContent = isDark ? '☀️ 主题' : '🌙 主题';
+  }
+}
+
+function isOfficeFile(filename) {
+  const officeExts = ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.odt', '.ods', '.odp'];
+  const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+  return officeExts.includes(ext);
 }
 
 async function fetchHistoryPage(offset, limit = PAGE_SIZE, append = true) {
@@ -165,9 +216,72 @@ function setupInfiniteScroll() {
   });
 }
 
+function selectedOfficeBlock() {
+  return officeBlocks.find((item) => item.id === selectedOfficeId) || null;
+}
+
+function renderOfficeList() {
+  const listEl = document.getElementById('office-file-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  officeBlocks.forEach((block) => {
+    const item = document.createElement('div');
+    item.className = `office-file-item${block.id === selectedOfficeId ? ' active' : ''}`;
+    item.innerHTML = `
+      <div class="office-file-item-name">${escHtml(block.filename || 'untitled')}</div>
+      <div class="office-file-item-type">${escHtml(block.lang || 'office')} · ${new Date(block.timestamp).toLocaleTimeString('zh-CN', { hour12: false })}</div>
+    `;
+    item.addEventListener('click', () => {
+      selectedOfficeId = block.id;
+      renderOfficeList();
+      renderOfficeContent();
+    });
+    listEl.appendChild(item);
+  });
+}
+
+function renderOfficeContent() {
+  const block = selectedOfficeBlock();
+  const displayContent = document.getElementById('office-display-content');
+  const filenameEl = document.getElementById('office-filename');
+  
+  if (!block) {
+    filenameEl.textContent = '-';
+    if (displayContent) {
+      displayContent.innerHTML = '<div class="office-placeholder">选择一个办公文件以预览</div>';
+    }
+    return;
+  }
+  
+  filenameEl.textContent = block.filename || 'untitled';
+  
+  if (displayContent) {
+    // For office files, show basic info and download option
+    displayContent.innerHTML = `
+      <div style="padding: 20px;">
+        <h3>${escHtml(block.filename || 'untitled')}</h3>
+        <p>类型: ${escHtml(block.lang || 'office')}</p>
+        <p>大小: ${escHtml(block.code?.length || 0)} 字符</p>
+        <p>时间: ${new Date(block.timestamp).toLocaleString('zh-CN', { hour12: false })}</p>
+        <div style="margin-top: 20px; padding: 20px; background: var(--line); border-radius: 8px;">
+          <p>📄 办公文件预览 (${escHtml(block.lang || 'office')})</p>
+          <p style="color: var(--muted);">完整的文件内容显示在这里</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
 function setupButtons() {
   document.getElementById('edit-btn').addEventListener('click', () => switchMode('code'));
   document.getElementById('render-btn').addEventListener('click', () => switchMode('render'));
+  document.getElementById('office-btn').addEventListener('click', () => switchMode('office'));
+
+  document.getElementById('theme-btn').addEventListener('click', () => {
+    const isDark = document.documentElement.classList.contains('dark-mode');
+    applyTheme(!isDark);
+    saveTheme(!isDark);
+  });
 
   document.getElementById('reset-btn').addEventListener('click', async () => {
     if (!window.confirm('确认删除所有代码历史？')) return;
@@ -186,21 +300,12 @@ function setupButtons() {
     renderCurrent();
   });
 
-  document.getElementById('fullscreen-btn').addEventListener('click', () => {
-    const renderCard = document.getElementById('render-card');
-    if (renderCard) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        renderCard.requestFullscreen().catch((err) => {
-          console.error(`Error attempting to enable fullscreen: ${err.message}`);
-        });
-      }
-    }
-  });
-
   document.getElementById('toggle-sidebar').addEventListener('click', () => {
     document.getElementById('code-view').classList.toggle('sidebar-open');
+  });
+
+  document.getElementById('office-back-btn').addEventListener('click', () => {
+    switchMode('render');
   });
 }
 
@@ -334,6 +439,7 @@ function setupTouchBack() {
 
 function init() {
   switchMode('render');
+  loadTheme();
   loadLocalHistory();
   setupButtons();
   setupEditorSync();
