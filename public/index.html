@@ -1,99 +1,102 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LLM Result Showcase</title>
-  <link rel="stylesheet" href="/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Fluid Showcase - Full Sandbox</title>
+    <!-- 引入 Tailwind CSS 强力驱动视觉 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #08080a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.5s ease;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        .aurora-bg-glow {
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.05);
+            transition: box-shadow 0.5s ease;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.01);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.3);
+        }
+
+        /* 旋转星云与扫光动画 */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; transform: scale(0.98); }
+            50% { opacity: 0.6; transform: scale(1.02); }
+        }
+        .core-pulse {
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        /* 🌊 超唯美量子水纹涟漪特效 */
+        @keyframes ripple-wave {
+            0% {
+                transform: scale(0.3);
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1.6);
+                opacity: 0;
+            }
+        }
+        .ripple-layer {
+            position: absolute;
+            border-radius: 50%;
+            border: 1.5px solid var(--theme-color, #10b981);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .ripple-1 { animation: ripple-wave 6s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; }
+        .ripple-2 { animation: ripple-wave 6s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; animation-delay: 2s; }
+        .ripple-3 { animation: ripple-wave 6s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; animation-delay: 4s; }
+
+        /* 动态背景转换 */
+        .theme-cyber {
+            --theme-color: #10b981;
+            --theme-glow: rgba(16, 185, 129, 0.2);
+        }
+        .theme-cyber-purple {
+            --theme-color: #a855f7;
+            --theme-glow: rgba(168, 85, 247, 0.2);
+        }
+        .theme-cyber-blue {
+            --theme-color: #06b6d4;
+            --theme-glow: rgba(6, 182, 212, 0.2);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+    </style>
 </head>
-<body>
-  <div id="app" class="mode-render">
-    <header class="toolbar">
-      <div class="title">LLM Result Showcase</div>
-      <div class="status"><span id="status-dot"></span><span id="status-text">connecting</span></div>
-      <div class="actions actions-render" id="render-actions">
-        <button id="edit-btn" class="btn">编辑</button>
-        <button id="refresh-btn" class="btn">刷新</button>
-        <button id="office-btn" class="btn">办公室</button>
-        <button id="theme-btn" class="btn">🌙 主题</button>
-      </div>
-      <div class="actions actions-code" id="code-actions">
-        <button id="render-btn" class="btn btn-primary">渲染</button>
-        <button id="reset-btn" class="btn btn-danger">重置</button>
-      </div>
-    </header>
-
-    <main class="content">
-      <section id="render-view" class="view render-view">
-        <article id="render-card" class="render-card">
-          <div class="render-meta">
-            <span id="render-filename">等待代码</span>
-            <span id="render-lang">plaintext</span>
-            <span id="render-type" class="render-type">代码</span>
-          </div>
-          <div id="render-content" class="render-content">
-            <pre><code id="render-code" class="hljs">等待来自 CLI 的代码推送...</code></pre>
-          </div>
-        </article>
-      </section>
-
-      <section id="code-view" class="view code-view">
-        <div class="mobile-tabs">
-          <button id="toggle-sidebar" class="btn">代码列表</button>
-          <button id="swipe-tip" class="btn btn-ghost" disabled>右滑返回渲染页</button>
-        </div>
-        <aside id="sidebar" class="sidebar">
-          <div class="sidebar-header">Code Blocks</div>
-          <div id="sidebar-list"></div>
-        </aside>
-        <section class="editor-pane">
-          <div class="editor-meta">
-            <span id="editor-filename">-</span>
-            <span id="editor-time">-</span>
-          </div>
-          <textarea id="editor" spellcheck="false" aria-label="代码编辑区"></textarea>
-        </section>
-      </section>
-
-      <section id="office-view" class="view office-view">
-        <aside id="office-sidebar" class="office-sidebar">
-          <div class="office-sidebar-header">办公文件</div>
-          <div id="office-file-list" class="office-file-list"></div>
-        </aside>
-        <section class="office-display-pane">
-          <div class="office-display-meta">
-            <span id="office-filename">-</span>
-            <button id="office-back-btn" class="btn">← 返回渲染</button>
-          </div>
-          <div id="office-display-content" class="office-display-content">
-            <div class="office-placeholder">选择一个办公文件以预览</div>
-          </div>
-        </section>
-      </section>
-    </main>
-  </div>
-
-  <!-- Renderer libraries -->
-  <!-- Note: SRI hashes should be generated for production. These CDN scripts provide critical rendering functionality. -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/highlight.js/build/highlight.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  
-  <!-- Renderer modules -->
-  <script src="/renderers/code-renderer.js"></script>
-  <script src="/renderers/markdown-renderer.js"></script>
-  <script src="/renderers/json-tree-renderer.js"></script>
-  <script src="/renderers/html-preview-renderer.js"></script>
-  <script src="/renderers/image-renderer.js"></script>
-  <script src="/renderers/pdf-renderer.js"></script>
-  <script src="/renderers/video-renderer.js"></script>
-  <script src="/renderers/audio-renderer.js"></script>
-  <script src="/renderers/svg-renderer.js"></script>
-  <script src="/renderers/model-3d-renderer.js"></script>
-  <script src="/renderers/dispatcher.js"></script>
-  
-  <!-- Main client -->
-  <script src="/client.js"></script>
+<body class="text-gray-200 h-screen flex overflow-hidden selection:bg-emerald-500/20 selection:text-emerald-300 theme-cyber">
+...
 </body>
 </html>
