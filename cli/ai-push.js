@@ -392,6 +392,33 @@ if (hasFlag('--status')) {
   return;
 }
 
+if (hasFlag('--query-tickets') || hasFlag('--list-tickets') || args[0] === 'query' || args[0] === 'tickets') {
+  await ensureAppDirs();
+  const TICKETS_DIR = path.join(APP_DIR, 'tickets');
+  try {
+    await fsp.mkdir(TICKETS_DIR, { recursive: true });
+    const files = await fsp.readdir(TICKETS_DIR);
+    if (files.length === 0) {
+      console.log('\x1b[33m○ No tickets found\x1b[0m');
+    } else {
+      console.log(`\x1b[36m● Tickets (${files.length})\x1b[0m`);
+      const tickets = files.sort().reverse().slice(0, 10);
+      for (const file of tickets) {
+        const stat = await fsp.stat(path.join(TICKETS_DIR, file));
+        const size = stat.size;
+        console.log(`  \x1b[32m${file}\x1b[0m (${size} bytes, ${new Date(stat.mtime).toLocaleString('zh-CN')})`);
+      }
+      if (files.length > 10) {
+        console.log(`  ... and ${files.length - 10} more`);
+      }
+    }
+  } catch (error) {
+    await logError(error, { host: HOST, port: PORT, command: 'query-tickets' });
+    console.error(`\x1b[31m✗\x1b[0m Failed to query tickets: ${error.message}`);
+  }
+  return;
+}
+
 async function sendOne(payload, sourceLabel) {
   const res = await withPushFallback(payload, HOST, PORT, {
     payloadMeta: { source: sourceLabel, filename: payload.filename, lang: payload.lang },

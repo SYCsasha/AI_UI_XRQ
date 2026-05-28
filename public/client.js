@@ -19,12 +19,9 @@ let loadingPage = false;
 let officeBlocks = [];
 let selectedOfficeId = null;
 
-const app = document.getElementById('app');
-const renderCodeEl = document.getElementById('render-code');
-const renderFilenameEl = document.getElementById('render-filename');
-const renderLangEl = document.getElementById('render-lang');
-const sidebarListEl = document.getElementById('sidebar-list');
-const editorEl = document.getElementById('editor');
+// New UI state
+let currentFile = 'html'; // html, png, json, office
+let htmlMode = 'preview'; // preview or code
 
 function escHtml(value) {
   return String(value)
@@ -33,13 +30,6 @@ function escHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-function status(text, connected = false) {
-  const dot = document.getElementById('status-dot');
-  const label = document.getElementById('status-text');
-  label.textContent = text;
-  dot.classList.toggle('connected', connected);
 }
 
 function saveLocalHistory() {
@@ -57,7 +47,7 @@ function loadLocalHistory() {
     if (Array.isArray(parsed) && parsed.length) {
       blocks = parsed;
       selectedId = parsed[0].id;
-      renderSidebar();
+      renderFileDirectory();
       renderCurrent();
     }
   } catch {
@@ -84,8 +74,7 @@ function mergeBlocks(items, append = false) {
   if (!selectedOfficeId && officeBlocks.length) selectedOfficeId = officeBlocks[0].id;
   
   saveLocalHistory();
-  renderSidebar();
-  renderOfficeList();
+  renderFileDirectory();
   renderCurrent();
 }
 
@@ -93,99 +82,192 @@ function selectedBlock() {
   return blocks.find((item) => item.id === selectedId) || null;
 }
 
-function renderCurrent() {
-  const block = selectedBlock();
-  if (!block) {
-    renderFilenameEl.textContent = '等待代码';
-    renderLangEl.textContent = 'plaintext';
-    renderCodeEl.textContent = '等待来自 CLI 的代码推送...';
-    document.getElementById('editor-filename').textContent = '-';
-    document.getElementById('editor-time').textContent = '-';
-    document.getElementById('render-type').textContent = '代码';
-    editorEl.value = '';
-    return;
-  }
-
-  renderFilenameEl.textContent = block.filename || 'untitled';
-  renderLangEl.textContent = block.lang || 'plaintext';
-  document.getElementById('editor-filename').textContent = block.filename || 'untitled';
-  document.getElementById('editor-time').textContent = new Date(block.timestamp).toLocaleString('zh-CN', { hour12: false });
-
-  // Use renderer dispatcher for content rendering
-  const renderContent = document.getElementById('render-content');
-  const contentType = rendererDispatcher.detectContentType(block);
-  document.getElementById('render-type').textContent = rendererDispatcher.getTypeName(contentType);
-  
-  rendererDispatcher.render(block, renderContent);
-  
-  editorEl.value = block.code || '';
-}
-
-function renderSidebar() {
-  sidebarListEl.innerHTML = '';
-  blocks.forEach((block) => {
-    const item = document.createElement('div');
-    item.className = `sidebar-item${block.id === selectedId ? ' active' : ''}`;
-    item.innerHTML = `
-      <div class="sidebar-item-name">${escHtml(block.filename || 'untitled')}</div>
-      <div class="sidebar-item-meta">${escHtml(block.lang || 'plaintext')} · ${new Date(block.timestamp).toLocaleTimeString('zh-CN', { hour12: false })}</div>
-    `;
-    item.addEventListener('click', () => {
-      selectedId = block.id;
-      renderSidebar();
-      renderCurrent();
-      document.getElementById('code-view').classList.remove('sidebar-open');
-    });
-    sidebarListEl.appendChild(item);
-  });
-}
-
-function switchMode(mode) {
-  app.classList.toggle('mode-render', mode === 'render');
-  app.classList.toggle('mode-code', mode === 'code');
-  app.classList.toggle('mode-office', mode === 'office');
-}
-
-function saveTheme(isDark) {
-  try {
-    localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function loadTheme() {
-  try {
-    const theme = localStorage.getItem(THEME_KEY) || 'light';
-    const isDark = theme === 'dark';
-    applyTheme(isDark);
-    return isDark;
-  } catch {
-    return false;
-  }
-}
-
-function applyTheme(isDark) {
-  const html = document.documentElement;
-  if (isDark) {
-    html.classList.add('dark-mode');
-  } else {
-    html.classList.remove('dark-mode');
-  }
-  updateThemeButton(isDark);
-}
-
-function updateThemeButton(isDark) {
-  const btn = document.getElementById('theme-btn');
-  if (btn) {
-    btn.textContent = isDark ? '☀️ 主题' : '🌙 主题';
-  }
+function selectedOfficeBlock() {
+  return officeBlocks.find((item) => item.id === selectedOfficeId) || null;
 }
 
 function isOfficeFile(filename) {
   const officeExts = ['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.odt', '.ods', '.odp'];
   const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
   return officeExts.includes(ext);
+}
+
+function detectFileType(filename) {
+  if (!filename) return 'html';
+  const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+  
+  // Image types
+  if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp'].includes(ext)) return 'png';
+  
+  // JSON/Data types
+  if (['.json', '.yaml', '.yml', '.toml', '.csv'].includes(ext)) return 'json';
+  
+  // Office types
+  if (['.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.odt', '.ods', '.odp'].includes(ext)) return 'office';
+  
+  // Default to HTML/Code
+  return 'html';
+}
+
+function renderFileDirectory() {
+  const fileDir = document.getElementById('fileDirectory');
+  if (!fileDir) return;
+
+  // Clear existing items except the template buttons
+  const buttons = fileDir.querySelectorAll('button');
+  buttons.forEach(btn => btn.remove());
+
+  // Add items from blocks
+  blocks.slice(0, 10).forEach((block) => {
+    const btn = document.createElement('button');
+    const fileType = detectFileType(block.filename);
+    const icon = getFileIcon(fileType);
+    const isSelected = block.id === selectedId;
+    
+    btn.className = `w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 group text-left ${
+      isSelected 
+        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+        : 'hover:bg-white/5 text-gray-400 hover:text-gray-200 border border-transparent'
+    }`;
+    
+    btn.innerHTML = `
+      <div class="flex items-center space-x-2.5 truncate">
+        <i class="${icon} text-sm group-hover:scale-110 transition-transform"></i>
+        <span class="text-xs font-medium truncate">${escHtml(block.filename || 'untitled')}</span>
+      </div>
+      <i class="fa-solid fa-chevron-right text-[10px] ${isSelected ? 'opacity-60' : 'opacity-0 group-hover:opacity-60'} transition-opacity"></i>
+    `;
+    
+    btn.addEventListener('click', () => {
+      selectedId = block.id;
+      currentFile = fileType;
+      renderFileDirectory();
+      renderCurrent();
+    });
+    
+    fileDir.appendChild(btn);
+  });
+}
+
+function getFileIcon(fileType) {
+  const icons = {
+    'html': 'fa-brands fa-html5 text-orange-500',
+    'png': 'fa-solid fa-image text-purple-400',
+    'json': 'fa-solid fa-square-poll-horizontal text-sky-400',
+    'office': 'fa-solid fa-file-word text-blue-500'
+  };
+  return icons[fileType] || icons['html'];
+}
+
+function renderCurrent() {
+  const block = selectedBlock();
+  
+  // Show placeholder when no block selected
+  if (!block) {
+    document.getElementById('panel-html-render').classList.remove('hidden');
+    document.getElementById('panel-html-code').classList.add('hidden');
+    document.getElementById('panel-png').classList.add('hidden');
+    document.getElementById('panel-json').classList.add('hidden');
+    return;
+  }
+
+  // Determine what to display based on file type or selection
+  const fileType = detectFileType(block.filename);
+  
+  if (fileType === 'png' || currentFile === 'png') {
+    renderImagePanel(block);
+  } else if (fileType === 'json' || currentFile === 'json') {
+    renderJsonPanel(block);
+  } else if (fileType === 'office' || currentFile === 'office') {
+    renderOfficePanel(block);
+  } else {
+    renderCodePanel(block);
+  }
+}
+
+function renderCodePanel(block) {
+  document.getElementById('panel-html-render').classList.add('hidden');
+  document.getElementById('panel-html-code').classList.add('hidden');
+  document.getElementById('panel-png').classList.add('hidden');
+  document.getElementById('panel-json').classList.add('hidden');
+
+  if (htmlMode === 'preview') {
+    document.getElementById('panel-html-render').classList.remove('hidden');
+    const renderContent = document.getElementById('panel-html-render');
+    if (rendererDispatcher && rendererDispatcher.render) {
+      rendererDispatcher.render(block, renderContent);
+    }
+  } else {
+    document.getElementById('panel-html-code').classList.remove('hidden');
+    const codePane = document.getElementById('panel-html-code');
+    if (codePane) {
+      const preEl = codePane.querySelector('pre');
+      if (preEl) {
+        preEl.textContent = block.code || '// No code available';
+        // Apply syntax highlighting if available
+        if (window.hljs) {
+          preEl.classList.add('language-' + (block.lang || 'plaintext'));
+          hljs.highlightElement(preEl);
+        }
+      }
+    }
+  }
+}
+
+function renderImagePanel(block) {
+  document.getElementById('panel-html-render').classList.add('hidden');
+  document.getElementById('panel-html-code').classList.add('hidden');
+  document.getElementById('panel-png').classList.remove('hidden');
+  document.getElementById('panel-json').classList.add('hidden');
+
+  const imgPanel = document.getElementById('panel-png');
+  if (imgPanel && rendererDispatcher && rendererDispatcher.render) {
+    rendererDispatcher.render(block, imgPanel);
+  }
+}
+
+function renderJsonPanel(block) {
+  document.getElementById('panel-html-render').classList.add('hidden');
+  document.getElementById('panel-html-code').classList.add('hidden');
+  document.getElementById('panel-png').classList.add('hidden');
+  document.getElementById('panel-json').classList.remove('hidden');
+
+  const jsonPanel = document.getElementById('panel-json');
+  if (jsonPanel && rendererDispatcher && rendererDispatcher.render) {
+    rendererDispatcher.render(block, jsonPanel);
+  }
+}
+
+function renderOfficePanel(block) {
+  // Office panel - placeholder implementation
+  document.getElementById('panel-html-render').classList.add('hidden');
+  document.getElementById('panel-html-code').classList.add('hidden');
+  document.getElementById('panel-png').classList.add('hidden');
+  document.getElementById('panel-json').classList.remove('hidden');
+
+  const jsonPanel = document.getElementById('panel-json');
+  if (jsonPanel) {
+    jsonPanel.innerHTML = `
+      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+        <span class="text-xs font-semibold text-gray-300">办公文件预览</span>
+        <span class="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded font-mono">${escHtml(block.lang || 'OFFICE')}</span>
+      </div>
+      <div class="grid grid-cols-1 gap-4 mt-4">
+        <div class="bg-black/30 p-4 rounded-xl border border-gray-800/40">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">文件名称</div>
+          <div class="text-sm font-bold text-white mt-2">${escHtml(block.filename || 'untitled')}</div>
+        </div>
+        <div class="bg-black/30 p-4 rounded-xl border border-gray-800/40">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">文件类型</div>
+          <div class="text-sm font-bold text-white mt-2">${escHtml(block.lang || 'Office Document')}</div>
+        </div>
+        <div class="bg-black/30 p-4 rounded-xl border border-gray-800/40">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">修改时间</div>
+          <div class="text-sm font-bold text-white mt-2">${new Date(block.timestamp).toLocaleString('zh-CN', { hour12: false })}</div>
+        </div>
+      </div>
+    `;
+  }
 }
 
 async function fetchHistoryPage(offset, limit = PAGE_SIZE, append = true) {
@@ -205,117 +287,14 @@ async function fetchHistoryPage(offset, limit = PAGE_SIZE, append = true) {
 }
 
 function setupInfiniteScroll() {
-  const pane = document.querySelector('.sidebar');
-  if (!pane) return;
-  pane.addEventListener('scroll', () => {
+  const fileDir = document.getElementById('fileDirectory');
+  if (!fileDir) return;
+  fileDir.addEventListener('scroll', () => {
     if (!hasMore || loadingPage) return;
-    const nearBottom = pane.scrollTop + pane.clientHeight >= pane.scrollHeight - SCROLL_THRESHOLD_PX;
+    const nearBottom = fileDir.scrollTop + fileDir.clientHeight >= fileDir.scrollHeight - SCROLL_THRESHOLD_PX;
     if (nearBottom) {
       fetchHistoryPage(loadedOffset, PAGE_SIZE, true);
     }
-  });
-}
-
-function selectedOfficeBlock() {
-  return officeBlocks.find((item) => item.id === selectedOfficeId) || null;
-}
-
-function renderOfficeList() {
-  const listEl = document.getElementById('office-file-list');
-  if (!listEl) return;
-  listEl.innerHTML = '';
-  officeBlocks.forEach((block) => {
-    const item = document.createElement('div');
-    item.className = `office-file-item${block.id === selectedOfficeId ? ' active' : ''}`;
-    item.innerHTML = `
-      <div class="office-file-item-name">${escHtml(block.filename || 'untitled')}</div>
-      <div class="office-file-item-type">${escHtml(block.lang || 'office')} · ${new Date(block.timestamp).toLocaleTimeString('zh-CN', { hour12: false })}</div>
-    `;
-    item.addEventListener('click', () => {
-      selectedOfficeId = block.id;
-      renderOfficeList();
-      renderOfficeContent();
-    });
-    listEl.appendChild(item);
-  });
-}
-
-function renderOfficeContent() {
-  const block = selectedOfficeBlock();
-  const displayContent = document.getElementById('office-display-content');
-  const filenameEl = document.getElementById('office-filename');
-  
-  if (!block) {
-    filenameEl.textContent = '-';
-    if (displayContent) {
-      displayContent.innerHTML = '<div class="office-placeholder">选择一个办公文件以预览</div>';
-    }
-    return;
-  }
-  
-  filenameEl.textContent = block.filename || 'untitled';
-  
-  if (displayContent) {
-    // For office files, show basic info and download option
-    displayContent.innerHTML = `
-      <div style="padding: 20px;">
-        <h3>${escHtml(block.filename || 'untitled')}</h3>
-        <p>类型: ${escHtml(block.lang || 'office')}</p>
-        <p>大小: ${escHtml(block.code?.length || 0)} 字符</p>
-        <p>时间: ${new Date(block.timestamp).toLocaleString('zh-CN', { hour12: false })}</p>
-        <div style="margin-top: 20px; padding: 20px; background: var(--line); border-radius: 8px;">
-          <p>📄 办公文件预览 (${escHtml(block.lang || 'office')})</p>
-          <p style="color: var(--muted);">完整的文件内容显示在这里</p>
-        </div>
-      </div>
-    `;
-  }
-}
-
-function setupButtons() {
-  document.getElementById('edit-btn').addEventListener('click', () => switchMode('code'));
-  document.getElementById('render-btn').addEventListener('click', () => switchMode('render'));
-  document.getElementById('office-btn').addEventListener('click', () => switchMode('office'));
-
-  document.getElementById('theme-btn').addEventListener('click', () => {
-    const isDark = document.documentElement.classList.contains('dark-mode');
-    applyTheme(!isDark);
-    saveTheme(!isDark);
-  });
-
-  document.getElementById('reset-btn').addEventListener('click', async () => {
-    if (!window.confirm('确认删除所有代码历史？')) return;
-    await fetch('/api/clear', { method: 'POST' });
-    blocks = [];
-    selectedId = null;
-    loadedOffset = 0;
-    hasMore = false;
-    saveLocalHistory();
-    renderSidebar();
-    renderCurrent();
-    switchMode('render');
-  });
-
-  document.getElementById('refresh-btn').addEventListener('click', () => {
-    renderCurrent();
-  });
-
-  document.getElementById('toggle-sidebar').addEventListener('click', () => {
-    document.getElementById('code-view').classList.toggle('sidebar-open');
-  });
-
-  document.getElementById('office-back-btn').addEventListener('click', () => {
-    switchMode('render');
-  });
-}
-
-function setupEditorSync() {
-  editorEl.addEventListener('input', () => {
-    const block = selectedBlock();
-    if (!block) return;
-    block.code = editorEl.value;
-    renderCurrent();
-    saveLocalHistory();
   });
 }
 
@@ -344,13 +323,11 @@ function setupWsHeartbeat() {
 
 function connectWs() {
   clearTimeout(reconnectTimer);
-  status('connecting', false);
 
   ws = new WebSocket(WS_URL);
 
   ws.onopen = () => {
     reconnectAttempts = 0;
-    status('live', true);
     setupWsHeartbeat();
     stopFallbackPolling();
   };
@@ -382,7 +359,7 @@ function connectWs() {
       loadedOffset = 0;
       hasMore = false;
       saveLocalHistory();
-      renderSidebar();
+      renderFileDirectory();
       renderCurrent();
       return;
     }
@@ -395,7 +372,7 @@ function connectWs() {
           selectedId = blocks[0]?.id || null;
         }
         saveLocalHistory();
-        renderSidebar();
+        renderFileDirectory();
         renderCurrent();
       }
       return;
@@ -403,7 +380,6 @@ function connectWs() {
   };
 
   ws.onclose = () => {
-    status('disconnected', false);
     clearInterval(heartbeatTimer);
     startFallbackPolling();
     reconnectAttempts += 1;
@@ -427,26 +403,48 @@ function setupTouchBack() {
   }, { passive: true });
 
   window.addEventListener('touchend', (e) => {
-    if (!app.classList.contains('mode-code')) return;
+    if (htmlMode !== 'code') return;
     const touch = e.changedTouches[0];
     const dx = touch.clientX - startX;
     const dy = Math.abs(touch.clientY - startY);
     if (dx > 80 && dy < 40) {
-      switchMode('render');
+      htmlMode = 'preview';
+      renderCurrent();
     }
   }, { passive: true });
 }
 
+// Integration hooks for new UI functions
+function switchFile(fileType) {
+  currentFile = fileType;
+  htmlMode = 'preview';
+  renderCurrent();
+}
+
+function toggleHtmlMode() {
+  if (currentFile !== 'html') return;
+  htmlMode = (htmlMode === 'preview') ? 'code' : 'preview';
+  renderCurrent();
+}
+
 function init() {
-  switchMode('render');
-  loadTheme();
   loadLocalHistory();
-  setupButtons();
-  setupEditorSync();
   setupInfiniteScroll();
   setupTouchBack();
   connectWs();
   fetchHistoryPage(0, PAGE_SIZE, false);
+  
+  // Hide action buttons that aren't implemented yet
+  const actionRefresh = document.getElementById('action-refresh');
+  const actionCopy = document.getElementById('action-copy');
+  const actionFlip = document.getElementById('action-flip');
+  
+  if (actionRefresh) actionRefresh.addEventListener('click', () => renderCurrent());
 }
 
-init();
+// Wait for DOM to be ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

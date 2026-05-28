@@ -86,17 +86,580 @@
             --theme-color: #06b6d4;
             --theme-glow: rgba(6, 182, 212, 0.2);
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.2s ease-out;
-        }
     </style>
 </head>
 <body class="text-gray-200 h-screen flex overflow-hidden selection:bg-emerald-500/20 selection:text-emerald-300 theme-cyber">
-...
+
+    <!-- ================= 1. 左侧：智能工作区目录 (15% 宽度，支持优雅折叠动画) ================= -->
+    <aside id="sidebar" class="w-[15%] min-w-[200px] border-r border-gray-900 flex flex-col justify-between bg-[#0c0c0e] z-20 transition-all duration-300 ease-in-out">
+        <div>
+            <!-- 左上角：LLM展示台  -->
+            <div class="h-14 px-4 border-b border-gray-900 flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-300">LLM展示台</span>
+                
+                <!-- 小绿球 + 动态运行时间 -->
+                <div class="flex items-center space-x-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-gray-800/80">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="runningTimer" class="text-[9px] text-gray-400 font-mono tracking-wider font-semibold">00:00:00</span>
+                </div>
+            </div>
+
+            <!-- 目录文件列表 -->
+            <div class="p-3 space-y-4">
+                <div class="flex items-center justify-between px-2 text-gray-500">
+                    <span class="text-[10px] text-gray-600 font-bold uppercase tracking-widest">文件列表</span>
+                    <button class="hover:text-emerald-400 p-1 rounded transition-colors" title="人类新建或上传文件">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </button>
+                </div>
+                
+                <nav class="space-y-1" id="fileDirectory">
+                    <!-- index.html -->
+                    <button onclick="switchFile('html')" id="btn-html" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 transition-all duration-200 group text-left">
+                        <div class="flex items-center space-x-2.5 truncate">
+                            <i class="fa-brands fa-html5 text-orange-500 text-sm group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs font-medium truncate">index.html</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-[10px] opacity-60"></i>
+                    </button>
+
+                    <!-- banner.png -->
+                    <button onclick="switchFile('png')" id="btn-png" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-gray-200 transition-all duration-200 group text-left">
+                        <div class="flex items-center space-x-2.5 truncate">
+                            <i class="fa-solid fa-image text-purple-400 text-sm group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs font-medium truncate">banner.png</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-opacity"></i>
+                    </button>
+
+                    <!-- dashboard.json -->
+                    <button onclick="switchFile('json')" id="btn-json" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-gray-200 transition-all duration-200 group text-left">
+                        <div class="flex items-center space-x-2.5 truncate">
+                            <i class="fa-solid fa-square-poll-horizontal text-sky-400 text-sm group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs font-medium truncate">dashboard.json</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-[10px] opacity-0 group-hover:opacity-60 transition-opacity"></i>
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- 底部 AI 工单处理器 -->
+        <div class="p-3 border-t border-gray-900 bg-[#09090b]">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <div class="text-[10px] text-gray-600"><i class="fa-solid fa-wand-magic-sparkles mr-1 text-emerald-500"></i>AI 工单处理器</div>
+                <!-- 彩色渐变版本号 -->
+                <span class="text-[10px] font-mono font-extrabold bg-gradient-to-r from-emerald-400 via-cyan-400 to-pink-500 bg-clip-text text-transparent">v1.4.0</span>
+            </div>
+            <div class="relative flex items-center bg-[#131316] border border-gray-800 rounded-lg p-1.5 focus-within:border-emerald-500/40 transition">
+                <input type="text" placeholder="工单内容..." class="w-full bg-transparent text-[11px] px-1.5 py-0.5 focus:outline-none text-white placeholder-gray-600">
+                <button class="bg-emerald-500 hover:bg-emerald-600 text-black p-1 rounded-md transition flex items-center justify-center">
+                    <i class="fa-solid fa-arrow-up text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ================= 2. 右侧：全幅空间万能展示舱 (85% 宽度) ================= -->
+    <main class="flex-1 flex flex-col bg-[#08080a] p-3 overflow-hidden">
+        
+        <div class="w-full h-full bg-[#0c0c0e] border border-emerald-500/10 aurora-bg-glow rounded-2xl flex flex-col overflow-hidden relative">
+            
+            <!-- 上方控制头（高度缩短1/3，适配极简与移动端） -->
+            <div class="px-5 py-2 border-b border-gray-900 bg-[#101013] flex items-center justify-between text-xs text-gray-400 z-40 shadow-md">
+                <div class="flex items-center space-x-3">
+                    <!-- 💻 新增：侧边栏折叠/展开开关 (最左侧，极具操控感) -->
+                    <button id="action-toggle-sidebar" onclick="toggleSidebar()" class="text-gray-400 hover:text-emerald-400 p-1.5 rounded-lg bg-[#16161a] border border-gray-800/80 hover:border-emerald-500/30 transition-all duration-200 flex items-center justify-center" style="width: 28px; height: 28px;" title="收缩/展开侧边栏">
+                        <i id="sidebarIcon" class="fa-solid fa-bars text-xs"></i>
+                    </button>
+
+                    <span class="text-gray-800">|</span>
+                    
+                    <!-- 🌟 动态工具链（移除按钮文本，仅显示高保真图标，实现极致紧凑） -->
+                    <div class="flex items-center space-x-2">
+                        <!-- 截图 -->
+                        <button id="action-screenshot" onclick="triggerScreenshot()" class="bg-[#16161a] hover:bg-emerald-500/10 hover:text-emerald-400 border border-gray-800/80 hover:border-emerald-500/30 p-1.5 rounded-lg flex items-center justify-center transition-all" style="width: 28px; height: 28px;" title="截图发送至工单仓库">
+                            <i class="fa-solid fa-camera text-xs"></i>
+                        </button>
+
+                        <!-- 画笔按钮 -->
+                        <button id="action-brush" onclick="toggleBrushMode()" class="bg-[#16161a] hover:bg-emerald-500/10 hover:text-emerald-400 border border-gray-800/80 hover:border-emerald-500/30 p-1.5 rounded-lg flex items-center justify-center transition-all" style="width: 28px; height: 28px;" title="开启标注画笔">
+                            <i class="fa-solid fa-paint-brush text-xs"></i>
+                        </button>
+
+                        <!-- 动态展开的色板面板 -->
+                        <div id="brush-colors-panel" class="hidden flex items-center bg-[#16161a] border border-gray-800/80 px-2 py-1 rounded-lg space-x-2 animate-fade-in">
+                            <button onclick="setBrushColor('#ef4444')" class="w-3 h-3 rounded-full bg-red-500 border border-white/20 hover:scale-125 transition-transform" id="color-red" title="极光红"></button>
+                            <button onclick="setBrushColor('#eab308')" class="w-3 h-3 rounded-full bg-yellow-500 border border-white/20 hover:scale-125 transition-transform" id="color-yellow" title="能量黄"></button>
+                            <button onclick="setBrushColor('#06b6d4')" class="w-3 h-3 rounded-full bg-cyan-400 border border-white/20 hover:scale-125 transition-transform" id="color-cyan" title="深空蓝"></button>
+                            <button onclick="setBrushColor('#ec4899')" class="w-3 h-3 rounded-full bg-pink-500 border border-white/20 hover:scale-125 transition-transform" id="color-pink" title="霓虹粉"></button>
+                            <span class="text-gray-800 text-[10px] select-none">|</span>
+                            <button onclick="clearCanvas()" class="text-gray-500 hover:text-white transition-colors" title="清除所有标注">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 动作控制岛（右侧，新增一键主题切换） -->
+                <div class="flex items-center space-x-4">
+                    <!-- 反转标记 FLIP (仅在可渲染的UI文件激活) -->
+                    <button id="action-flip" onclick="toggleHtmlMode()" class="text-gray-500 hover:text-emerald-400 transition-colors flex items-center space-x-1" title="反转查看代码/渲染视图">
+                        <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                        <span class="text-[10px] font-mono">FLIP</span>
+                    </button>
+                    
+                    <span id="action-divider" class="text-gray-800">|</span>
+
+                    <!-- 刷新标记 (仅在渲染态呈现) -->
+                    <button id="action-refresh" class="text-gray-500 hover:text-white transition-colors" title="刷新内容">
+                        <i class="fa-solid fa-rotate-right text-sm"></i>
+                    </button>
+
+                    <!-- 复制标记 -->
+                    <button id="action-copy" class="text-gray-500 hover:text-emerald-400 transition-colors hidden" title="复制资产源码/数据">
+                        <i class="fa-regular fa-copy text-sm"></i>
+                    </button>
+
+                    <!-- 主题切换标记 -->
+                    <button id="action-theme" onclick="toggleTheme()" class="text-gray-500 hover:text-emerald-400 transition-colors" title="切换量子渲染主题风格">
+                        <i class="fa-solid fa-palette text-sm"></i>
+                    </button>
+
+                    <!-- 全屏标记 -->
+                    <button id="action-fullscreen" onclick="window.open(window.location.href, '_blank')" class="text-gray-500 hover:text-white transition-colors" title="新建窗口全屏显示渲染区">
+                        <i class="fa-solid fa-expand text-sm"></i>
+                    </button>
+
+                    <!-- 导出标记 -->
+                    <button id="action-export" onclick="window.open('about:blank', '_blank')" class="text-gray-500 hover:text-white transition-colors" title="新建窗口并跳转下载成果">
+                        <i class="fa-solid fa-file-export text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 纯享 100% 纵深画布容器 -->
+            <div class="flex-1 bg-[#09090b] flex items-center justify-center p-6 relative overflow-hidden" id="sandboxShowcase">
+                
+                <!-- 标注专用的透明 canvas 绘图层 -->
+                <canvas id="markupCanvas" class="absolute inset-0 pointer-events-none z-30"></canvas>
+
+                <!-- 📸 [资产 1] HTML 渲染效果 -->
+                <div id="panel-html-render" class="w-full h-full flex flex-col items-center justify-center p-6 relative z-10 transition duration-300">
+                    
+                    <!-- 🌊 优雅的水纹特效层 -->
+                    <div class="absolute w-[500px] h-[500px] flex items-center justify-center pointer-events-none z-0">
+                        <div class="ripple-layer ripple-1 w-full h-full"></div>
+                        <div class="ripple-layer ripple-2 w-full h-full"></div>
+                        <div class="ripple-layer ripple-3 w-full h-full"></div>
+                    </div>
+
+                    <!-- 流光 Reactor 核心组件 (放置于涟漪正中心) -->
+                    <div class="relative flex items-center justify-center w-64 h-64 z-10">
+                        <!-- 外层虚线圆 -->
+                        <div class="absolute inset-0 rounded-full border border-dashed border-emerald-500/20 animate-[spin_60s_linear_infinite]"></div>
+                        <!-- 中层双层轨道线 -->
+                        <div class="absolute inset-4 rounded-full border-2 border-double border-cyan-500/10 animate-[spin_30s_linear_infinite_reverse]"></div>
+                        <!-- 内层扫光轨道 -->
+                        <div class="absolute inset-8 rounded-full border border-pink-500/10 animate-[spin_15s_linear_infinite]"></div>
+                        <!-- 流式呼吸荧光团 -->
+                        <div class="absolute inset-16 bg-gradient-to-tr from-emerald-500/10 via-cyan-500/10 to-indigo-500/20 rounded-full blur-2xl core-pulse" id="coreGlow"></div>
+                        
+                        <!-- 核心全息微核 -->
+                        <div class="absolute w-24 h-24 bg-[#121215]/95 backdrop-blur-xl border border-white/5 rounded-full flex flex-col items-center justify-center shadow-2xl z-10">
+                            <i class="fa-solid fa-brain text-emerald-400 text-3xl animate-pulse" id="coreBrainIcon"></i>
+                            <span class="text-[8px] font-mono tracking-widest text-emerald-500/60 mt-2" id="coreEngineText">SYS RENDERING</span>
+                        </div>
+                    </div>
+
+                    <!-- 量子涟漪流动标注说明 -->
+                    <div class="text-[10px] text-gray-500 font-mono tracking-widest uppercase mt-6 z-10 select-none animate-pulse">
+                        Quantum Waveforms Active
+                    </div>
+                </div>
+
+                <!-- [资产 2] HTML 编码显示框（FLIP 反转激活态） -->
+                <div id="panel-html-code" class="hidden w-full h-full text-left p-2">
+                    <pre class="code-font text-xs text-gray-400 leading-relaxed bg-[#0c0c0f] p-5 rounded-xl border border-gray-900/60 h-full overflow-auto custom-scroll">
+<span class="text-gray-600 select-none">01</span> <span class="text-pink-500">&lt;div</span> <span class="text-purple-400">class=</span><span class="text-emerald-400">"glass-card"</span><span class="text-pink-500">&gt;</span>
+<span class="text-gray-600 select-none">02</span>   <span class="text-pink-500">&lt;h2&gt;</span>Welcome Back<span class="text-pink-500">&lt;/h2&gt;</span>
+<span class="text-gray-600 select-none">03</span>   <span class="text-pink-500">&lt;input</span> <span class="text-purple-400">type=</span><span class="text-emerald-400">"email"</span> <span class="text-pink-500">/&gt;</span>
+<span class="text-gray-600 select-none">04</span>   <span class="text-pink-500">&lt;button&gt;</span>Login<span class="text-pink-500">&lt;/button&gt;</span>
+<span class="text-gray-600 select-none">05</span> <span class="text-pink-500">&lt;/div&gt;</span>
+<span class="text-gray-600 select-none">06</span>
+<span class="text-gray-500">&lt;!-- Tailwind CSS Config Applied --&gt;</span>
+<span class="text-gray-600 select-none">07</span> <span class="text-purple-400">.glass-card</span> {
+<span class="text-gray-600 select-none">08</span>   <span class="text-blue-400">backdrop-filter</span>: blur(16px);
+<span class="text-gray-600 select-none">09</span>   <span class="text-blue-400">background</span>: rgba(255,255,255,0.05);
+<span class="text-gray-600 select-none">10</span> }</pre>
+                </div>
+
+                <!-- [资产 3] 图像类后缀文件看板 -->
+                <div id="panel-png" class="hidden w-full h-full flex flex-col items-center justify-center">
+                    <div class="relative max-w-2xl w-full h-80 rounded-xl overflow-hidden border border-gray-800 shadow-2xl">
+                        <img src="http://googleusercontent.com/image_collection/image_retrieval/10527264836391638570_0" alt="Cyberpunk Aesthetic Canvas" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-5">
+                            <div>
+                                <h4 class="text-sm font-bold text-white">Cyberpunk Canvas Pro</h4>
+                                <p class="text-[11px] text-gray-400 font-mono mt-1">Seed: 402859102 / Aspect-Ratio: 16:9</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [资产 4] 办公类结构化数据面板 -->
+                <div id="panel-json" class="hidden w-full max-w-xl bg-[#111114] border border-gray-800 rounded-2xl p-6 space-y-5">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+                        <span class="text-xs font-semibold text-gray-300">核心数据结构体一览</span>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-mono">COMPILED SUCCESSFULLY</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-black/30 p-4 rounded-xl border border-gray-800/40">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">总营收额</div>
+                            <div class="text-base font-bold text-white mt-1">$42,850</div>
+                        </div>
+                        <div class="bg-black/30 p-4 rounded-xl border border-gray-800/40">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">环比涨幅</div>
+                            <div class="text-base font-bold text-emerald-400 mt-1">+18.2%</div>
+                        </div>
+                        <div class="bg-black/30 p-4 rounded-xl border border-gray-800/40">
+                            <div class="text-[10px] text-gray-500 uppercase tracking-wider">并行池数</div>
+                            <div class="text-base font-bold text-white mt-1">12,480</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- 📸 虚拟快门曝光闪光幕帘 -->
+    <div id="shutterFlash" class="fixed inset-0 bg-white opacity-0 pointer-events-none z-50 transition-opacity duration-150"></div>
+
+    <!-- 📩 AI 协处理器捕捉通知 (Toast) -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 bg-[#121215] border border-emerald-500/20 p-4 rounded-xl shadow-2xl flex items-center space-x-3 transition-all duration-300 translate-y-24 opacity-0 z-50">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400" id="toastIconContainer">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <div>
+            <h5 class="text-xs font-bold text-white" id="toastTitle">快照成功</h5>
+            <p class="text-[10px] text-gray-400 mt-0.5" id="toastDesc">标注及屏幕快照已同步提交给 AI 协处理器。</p>
+        </div>
+    </div>
+
+    <!-- ================= 核心多模态状态路由与交互控制 ================= -->
+    <script src="/renderers/dispatcher.js"></script>
+    <script src="/renderers/code-renderer.js"></script>
+    <script src="/renderers/image-renderer.js"></script>
+    <script src="/renderers/markdown-renderer.js"></script>
+    <script src="/renderers/html-preview-renderer.js"></script>
+    <script src="/renderers/pdf-renderer.js"></script>
+    <script src="/renderers/json-tree-renderer.js"></script>
+    <script src="/renderers/audio-renderer.js"></script>
+    <script src="/renderers/video-renderer.js"></script>
+    <script src="/renderers/svg-renderer.js"></script>
+    <script src="/renderers/model-3d-renderer.js"></script>
+    <script src="/renderers/office-renderer.js"></script>
+    <script src="/client.js"></script>
+        let currentFile = 'html'; 
+        let htmlMode = 'preview';  
+        let isSidebarCollapsed = false;
+
+        // 主题色彩控制
+        let currentTheme = 'cyber'; // cyber, cyber-purple, cyber-blue
+        const themeList = ['cyber', 'cyber-purple', 'cyber-blue'];
+
+        // 画笔状态链
+        const canvas = document.getElementById('markupCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let isBrushActive = false;
+        let brushColor = '#ef4444'; 
+        let brushSize = 3.5;
+
+        // 重新设置 Canvas 尺寸，避免在伸缩页面时失效
+        function resizeCanvas() {
+            const container = document.getElementById('sandboxShowcase');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        // 侧边栏折叠/展开动画逻辑
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const icon = document.getElementById('sidebarIcon');
+            isSidebarCollapsed = !isSidebarCollapsed;
+
+            if (isSidebarCollapsed) {
+                // 折叠状态：宽度归零，左移出屏，完全透明且穿透点击
+                sidebar.classList.add('w-0', 'min-w-0', 'opacity-0', 'pointer-events-none', '-translate-x-full');
+                sidebar.classList.remove('w-[15%]', 'min-w-[200px]');
+                icon.className = "fa-solid fa-bars-staggered text-xs text-emerald-400";
+            } else {
+                // 展开状态：恢复宽度，回移至正常流，恢复透光和事件触发
+                sidebar.classList.remove('w-0', 'min-w-0', 'opacity-0', 'pointer-events-none', '-translate-x-full');
+                sidebar.classList.add('w-[15%]', 'min-w-[200px]');
+                icon.className = "fa-solid fa-bars text-xs";
+            }
+            
+            // 延时等待过渡动画完成，重新刷新 Canvas 边界，使标注线条和水纹渲染不产生畸变
+            setTimeout(resizeCanvas, 310);
+        }
+
+        // 绑定绘图事件
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+
+        // 适配移动端触控标注
+        canvas.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', () => {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        function startDrawing(e) {
+            if (!isBrushActive) return;
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function draw(e) {
+            if (!isDrawing || !isBrushActive) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.strokeStyle = brushColor;
+            ctx.lineWidth = brushSize;
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        // 画笔激活器
+        function toggleBrushMode() {
+            isBrushActive = !isBrushActive;
+            const btn = document.getElementById('action-brush');
+            const panel = document.getElementById('brush-colors-panel');
+
+            if (isBrushActive) {
+                btn.className = "bg-emerald-500 text-black border border-emerald-400 p-1.5 rounded-lg flex items-center justify-center transition-all shadow-lg shadow-emerald-500/20 text-xs";
+                canvas.classList.remove('pointer-events-none');
+                canvas.classList.add('pointer-events-auto', 'cursor-crosshair');
+                panel.classList.remove('hidden');
+                resizeCanvas();
+                setBrushColor(brushColor); 
+            } else {
+                btn.className = "bg-[#16161a] hover:bg-emerald-500/10 hover:text-emerald-400 border border-gray-800/80 hover:border-emerald-500/30 p-1.5 rounded-lg flex items-center justify-center transition-all text-xs";
+                canvas.classList.add('pointer-events-none');
+                canvas.classList.remove('pointer-events-auto', 'cursor-crosshair');
+                panel.classList.add('hidden');
+                stopDrawing();
+            }
+        }
+
+        function setBrushColor(color) {
+            brushColor = color;
+            ['red', 'yellow', 'cyan', 'pink'].forEach(c => {
+                document.getElementById(`color-${c}`).style.borderColor = 'transparent';
+            });
+            let label = 'red';
+            if (color === '#eab308') label = 'yellow';
+            if (color === '#06b6d4') label = 'cyan';
+            if (color === '#ec4899') label = 'pink';
+            
+            document.getElementById(`color-${label}`).style.borderColor = '#ffffff';
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 模拟高保真快门截图与工单推送
+        function triggerScreenshot() {
+            const flash = document.getElementById('shutterFlash');
+            const toast = document.getElementById('toastNotification');
+
+            // 闪光灯
+            flash.style.opacity = '1';
+            setTimeout(() => {
+                flash.style.opacity = '0';
+            }, 150);
+
+            showToast("快照成功", "标注及屏幕快照已同步提交给 AI 协处理器。", "fa-cloud-arrow-up");
+        }
+
+        // 自研主题切换交互
+        function toggleTheme() {
+            const currentIndex = themeList.indexOf(currentTheme);
+            const nextIndex = (currentIndex + 1) % themeList.length;
+            const newTheme = themeList[nextIndex];
+            
+            // 样式重置
+            document.body.classList.remove(`theme-${currentTheme}`);
+            document.body.classList.add(`theme-${newTheme}`);
+            
+            // 更新当前主题
+            currentTheme = newTheme;
+
+            // 防御性安全判断
+            const dot = document.getElementById('themeIndicatorDot');
+            const fileDisplay = document.getElementById('currentFileNameDisplay');
+            const coreBrain = document.getElementById('coreBrainIcon');
+            const coreText = document.getElementById('coreEngineText');
+
+            if (newTheme === 'cyber') {
+                if (dot) dot.className = "w-1.5 h-1.5 inline-block bg-emerald-500 rounded-full transition-colors duration-300";
+                if (fileDisplay) fileDisplay.className = "text-xs text-emerald-400 font-semibold font-mono mr-2 transition-colors duration-300";
+                if (coreBrain) coreBrain.className = "fa-solid fa-brain text-emerald-400 text-3xl animate-pulse transition-colors duration-300";
+                if (coreText) coreText.className = "text-[8px] font-mono tracking-widest text-emerald-500/60 mt-2 transition-colors duration-300";
+                showToast("主题切换", "已转换为：极光绿 (Cyber Green)", "fa-palette");
+            } else if (newTheme === 'cyber-purple') {
+                if (dot) dot.className = "w-1.5 h-1.5 inline-block bg-purple-500 rounded-full transition-colors duration-300";
+                if (fileDisplay) fileDisplay.className = "text-xs text-purple-400 font-semibold font-mono mr-2 transition-colors duration-300";
+                if (coreBrain) coreBrain.className = "fa-solid fa-brain text-purple-400 text-3xl animate-pulse transition-colors duration-300";
+                if (coreText) coreText.className = "text-[8px] font-mono tracking-widest text-purple-500/60 mt-2 transition-colors duration-300";
+                showToast("主题切换", "已转换为：深空紫 (Cyber Purple)", "fa-palette");
+            } else if (newTheme === 'cyber-blue') {
+                if (dot) dot.className = "w-1.5 h-1.5 inline-block bg-cyan-500 rounded-full transition-colors duration-300";
+                if (fileDisplay) fileDisplay.className = "text-xs text-cyan-400 font-semibold font-mono mr-2 transition-colors duration-300";
+                if (coreBrain) coreBrain.className = "fa-solid fa-brain text-cyan-400 text-3xl animate-pulse transition-colors duration-300";
+                if (coreText) coreText.className = "text-[8px] font-mono tracking-widest text-cyan-500/60 mt-2 transition-colors duration-300";
+                showToast("主题切换", "已转换为：电光蓝 (Cyber Blue)", "fa-palette");
+            }
+        }
+
+        // 显示通知
+        function showToast(title, desc, iconClass) {
+            const toast = document.getElementById('toastNotification');
+            const tTitle = document.getElementById('toastTitle');
+            const tDesc = document.getElementById('toastDesc');
+            const tIcon = document.getElementById('toastIconContainer');
+
+            tTitle.innerText = title;
+            tDesc.innerText = desc;
+            tIcon.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (window.toastTimeout) clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        // 多模态资产渲染机制
+        function updateShowcaseStage() {
+            const btnFlip = document.getElementById('action-flip');
+            const btnRefresh = document.getElementById('action-refresh');
+            const btnCopy = document.getElementById('action-copy');
+            const divider = document.getElementById('action-divider');
+
+            document.getElementById('panel-html-render').classList.add('hidden');
+            document.getElementById('panel-html-code').classList.add('hidden');
+            document.getElementById('panel-png').classList.add('hidden');
+            document.getElementById('panel-json').classList.add('hidden');
+
+            if (currentFile === 'html') {
+                btnFlip.classList.remove('hidden');    
+                divider.classList.remove('hidden');
+
+                if (htmlMode === 'preview') {
+                    document.getElementById('panel-html-render').classList.remove('hidden');
+                    btnRefresh.classList.remove('hidden'); 
+                    btnCopy.classList.add('hidden');       
+                } else {
+                    document.getElementById('panel-html-code').classList.remove('hidden');
+                    btnRefresh.classList.add('hidden');    
+                    btnCopy.classList.remove('hidden');    
+                }
+            } 
+            else if (currentFile === 'png') {
+                document.getElementById('panel-png').classList.remove('hidden');
+                btnFlip.classList.add('hidden');
+                divider.classList.add('hidden');
+                btnRefresh.classList.add('hidden');
+                btnCopy.classList.remove('hidden');
+            } 
+            else if (currentFile === 'json') {
+                document.getElementById('panel-json').classList.remove('hidden');
+                btnFlip.classList.add('hidden');
+                divider.classList.add('hidden');
+                btnRefresh.classList.add('hidden');
+                btnCopy.classList.remove('hidden');
+            }
+
+            // 更新左侧目录高亮
+            ['html', 'png', 'json'].forEach(id => {
+                const sidebarBtn = document.getElementById(`btn-${id}`);
+                if (sidebarBtn) {
+                    if (id === currentFile) {
+                        sidebarBtn.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 transition-all duration-200 group text-left";
+                    } else {
+                        sidebarBtn.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-gray-200 transition-all duration-200 group text-left";
+                    }
+                }
+            });
+            
+            setTimeout(resizeCanvas, 50);
+        }
+
+        function switchFile(fileType) {
+            currentFile = fileType;
+            htmlMode = 'preview'; 
+            updateShowcaseStage();
+        }
+
+        function toggleHtmlMode() {
+            if (currentFile !== 'html') return;
+            htmlMode = (htmlMode === 'preview') ? 'code' : 'preview';
+            updateShowcaseStage();
+        }
+
+        // 真实运行时间计时器
+        let startTime = Date.now();
+        function updateRunningTime() {
+            const elapsed = Date.now() - startTime;
+            const hours = String(Math.floor((elapsed / (1000 * 60 * 60)) % 24)).padStart(2, '0');
+            const minutes = String(Math.floor((elapsed / (1000 * 60)) % 60)).padStart(2, '0');
+            const seconds = String(Math.floor((elapsed / 1000) % 60)).padStart(2, '0');
+            const timerEl = document.getElementById('runningTimer');
+            if (timerEl) {
+                timerEl.innerText = `${hours}:${minutes}:${seconds}`;
+            }
+        }
+        setInterval(updateRunningTime, 1000);
+
+        window.onload = function() {
+            updateShowcaseStage();
+            resizeCanvas();
+        }
+        window.addEventListener('resize', resizeCanvas);
+    </script>
 </body>
 </html>
